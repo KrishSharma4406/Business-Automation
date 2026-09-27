@@ -3,21 +3,38 @@ import { NextResponse } from "next/server";
 import { executeAutomation } from "@/src/lib/automation-engine";
 
 export async function POST() {
-  const result = await executeAutomation({
-    trigger: "new_lead",
-    action: "ai_qualify_lead",
+  try {
+    const result = await executeAutomation({
+      trigger: "new_lead",
 
-    config: {
-      minimumScore: 80,
-      notifyOwner: true,
-    },
+      action: "ai_qualify_lead",
 
-    data: {
-      leadId: "test-lead",
-      name: "Rahul Sharma",
-      message: "I need an ecommerce website.",
-    },
-  });
+      config: {
+        minimumScore: 80,
+        notifyOwner: true,
+      },
 
-  return NextResponse.json(result);
+      data: {
+        name: "Rahul Sharma",
+        email: "rahul@example.com",
+        company: "Rahul Technologies",
+        message:
+          "We need an ecommerce website. Budget is ₹2 lakh and we need it within 3 weeks.",
+      },
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Automation failed.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }

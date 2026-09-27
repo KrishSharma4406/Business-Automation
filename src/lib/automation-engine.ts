@@ -2,7 +2,7 @@ import type {
   AutomationAction,
   AutomationConfig,
   AutomationTrigger,
-} from "@/lib/automtaion";
+} from "./automation";
 
 type AutomationInput = {
   trigger: AutomationTrigger;

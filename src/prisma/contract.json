@@ -901,10 +901,6 @@
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
                   "nullable": false
                 }
@@ -1088,31 +1084,11 @@
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
                   "nullable": false
                 }
               },
               "foreignKeys": [
-                {
-                  "source": {
-                    "columns": [
-                      "customerId"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "Conversation"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "Customer"
-                  }
-                },
                 {
                   "source": {
                     "columns": [
@@ -1127,6 +1103,22 @@
                     ],
                     "namespaceId": "public",
                     "tableName": "Business"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "customerId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Conversation"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Customer"
                   }
                 }
               ],
@@ -1212,10 +1204,6 @@
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
                   "nullable": false
                 }
@@ -1341,10 +1329,6 @@
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-temporal@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
                   "nativeType": "timestamptz",
                   "nullable": false
                 }
@@ -1432,10 +1416,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a3915d40c44f3d318e7a3abf5937ee6c705fd21aa573d788de4a66c6769ade76"
+    "storageHash": "bcb46511cb6be59c6e01c5d1b16d9633bbcad89b310e3787ce5ae94dfb8d62d7"
   },
   "execution": {
-    "executionHash": "18d3d7eb20ff92983b5abf9877c072c549460318cf59918e4ce500a1909fca58",
+    "executionHash": "356e9e879f0ba8af681b1b9106a3bb47bc1c304153b907824587b9687b9f9140",
     "mutations": {
       "defaults": [
         {
@@ -1445,6 +1429,21 @@
           },
           "ref": {
             "column": "id",
+            "namespace": "public",
+            "table": "Automation"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
             "namespace": "public",
             "table": "Automation"
           }
@@ -1473,6 +1472,21 @@
         },
         {
           "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "Conversation"
+          }
+        },
+        {
+          "onCreate": {
             "id": "uuidv4",
             "kind": "generator"
           },
@@ -1484,11 +1498,41 @@
         },
         {
           "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "Customer"
+          }
+        },
+        {
+          "onCreate": {
             "id": "uuidv4",
             "kind": "generator"
           },
           "ref": {
             "column": "id",
+            "namespace": "public",
+            "table": "Lead"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
             "namespace": "public",
             "table": "Lead"
           }

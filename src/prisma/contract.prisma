@@ -8,26 +8,31 @@ model User {
 }
 
 model Lead {
-  id             Uuid      @id @default(uuid())
-  name           String
-  email          String?
-  phone          String?
-  company        String?
-  source         String?
-  message        String?
+  id          Uuid     @id @default(uuid())
 
-  status         String    @default("new")
-  priority       String    @default("medium")
+  businessId  Uuid
 
-  aiScore        Int?
-  aiSummary      String?
-  aiResponse     String?
+  name        String
+  email       String?
+  phone       String?
+  company     String?
 
-  businessId     Uuid
-  business       Business  @relation(fields: [businessId], references: [id])
+  message     String?
+  source      String?
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @default(now())
+  status      String   @default("new")
+  priority    String   @default("medium")
+
+  aiScore     Int?
+  aiSummary   String?
+  aiResponse  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   temporal.updatedAt()
+
+  business    Business @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
 }
 
 model Business {
@@ -50,56 +55,82 @@ model Business {
 }
 
 model Customer {
-  id          Uuid      @id @default(uuid())
-  name        String
-  email       String?
-  phone       String?
-  company     String?
-  notes       String?
-  status      String    @default("active")
+  id        Uuid     @id @default(uuid())
 
-  businessId  Uuid
-  business    Business  @relation(fields: [businessId], references: [id])
+  businessId Uuid
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  notes     String?
+
+  status    String   @default("active")
+
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
+
+  business  Business @relation(
+    fields: [businessId],
+    references: [id]
+  )
 
   conversations Conversation[]
+
+  @@index([businessId])
 }
 
 model Conversation {
-  id          Uuid      @id @default(uuid())
-
-  customerId  Uuid?
-  customer    Customer? @relation(fields: [customerId], references: [id])
+  id          Uuid     @id @default(uuid())
 
   businessId  Uuid
-  business    Business  @relation(fields: [businessId], references: [id])
+  customerId  Uuid?
 
   channel     String
-  status      String    @default("open")
+
+  status      String   @default("open")
 
   messages    Json
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   temporal.updatedAt()
+
+  business    Business @relation(
+    fields: [businessId],
+    references: [id]
+  )
+
+  customer    Customer? @relation(
+    fields: [customerId],
+    references: [id]
+  )
+
+  @@index([businessId])
+  @@index([customerId])
 }
 
 model Automation {
-  id          Uuid      @id @default(uuid())
+  id          Uuid     @id @default(uuid())
+
+  businessId  Uuid
 
   name        String
   description String?
+
   trigger     String
   action      String
 
-  enabled     Boolean   @default(true)
-
   config      Json?
 
-  businessId  Uuid
-  business    Business  @relation(fields: [businessId], references: [id])
+  enabled     Boolean  @default(true)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   temporal.updatedAt()
+
+  business    Business @relation(
+    fields: [businessId],
+    references: [id]
+  )
+
+  @@index([businessId])
 }

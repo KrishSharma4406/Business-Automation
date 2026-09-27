@@ -4,31 +4,33 @@ import type {
   AutomationTrigger,
 } from "./automation";
 
+import { qualifyLead } from "./ai/lead-qualification";
+
 type AutomationInput = {
   trigger: AutomationTrigger;
   action: AutomationAction;
   config?: AutomationConfig;
-  data: unknown;
+  data: any;
 };
 
 export async function executeAutomation(
   input: AutomationInput
 ) {
-  console.log("Executing automation:");
-
-  console.log({
-    trigger: input.trigger,
-    action: input.action,
-    config: input.config,
-    data: input.data,
-  });
-
   switch (input.action) {
-    case "ai_qualify_lead":
+    case "ai_qualify_lead": {
+      const result = await qualifyLead({
+        name: input.data.name,
+        email: input.data.email,
+        company: input.data.company,
+        message: input.data.message,
+      });
+
       return {
         success: true,
-        message: "Lead qualification queued.",
+        action: input.action,
+        result,
       };
+    }
 
     case "generate_response":
       return {

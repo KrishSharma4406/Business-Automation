@@ -1,4 +1,20 @@
 import Groq from "groq-sdk";
+import { z } from "zod";
+
+const LeadQualificationSchema = z.object({
+  score: z.number().min(0).max(100),
+
+  priority: z.enum([
+    "low",
+    "medium",
+    "high",
+    "urgent",
+  ]),
+
+  summary: z.string(),
+
+  response: z.string(),
+});
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -86,7 +102,9 @@ The response should be professional and suitable to send directly to the lead.
     throw new Error("AI returned an empty response.");
   }
 
-  const result = JSON.parse(content) as LeadQualification;
+  const parsed = JSON.parse(content);
 
-  return result;
+const result = LeadQualificationSchema.parse(parsed);
+
+return result;
 }

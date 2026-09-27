@@ -1,0 +1,105 @@
+// use prisma-8
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model Lead {
+  id             Uuid      @id @default(uuid())
+  name           String
+  email          String?
+  phone          String?
+  company        String?
+  source         String?
+  message        String?
+
+  status         String    @default("new")
+  priority       String    @default("medium")
+
+  aiScore        Int?
+  aiSummary      String?
+  aiResponse     String?
+
+  businessId     Uuid
+  business       Business  @relation(fields: [businessId], references: [id])
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+}
+
+model Business {
+  id          Uuid      @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  website     String?
+  industry    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+
+  ownerId     Uuid
+  owner       User      @relation(fields: [ownerId], references: [id])
+
+  customers   Customer[]
+  leads       Lead[]
+  conversations Conversation[]
+  automations Automation[]
+}
+
+model Customer {
+  id          Uuid      @id @default(uuid())
+  name        String
+  email       String?
+  phone       String?
+  company     String?
+  notes       String?
+  status      String    @default("active")
+
+  businessId  Uuid
+  business    Business  @relation(fields: [businessId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+
+  conversations Conversation[]
+}
+
+model Conversation {
+  id          Uuid      @id @default(uuid())
+
+  customerId  Uuid?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+
+  businessId  Uuid
+  business    Business  @relation(fields: [businessId], references: [id])
+
+  channel     String
+  status      String    @default("open")
+
+  messages    Json
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+}
+
+model Automation {
+  id          Uuid      @id @default(uuid())
+
+  name        String
+  description String?
+  trigger     String
+  action      String
+
+  enabled     Boolean   @default(true)
+
+  config      Json?
+
+  businessId  Uuid
+  business    Business  @relation(fields: [businessId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+}

@@ -1,4 +1,10 @@
 import "dotenv/config";
+import { Temporal } from "temporal-polyfill";
+
+if (typeof (globalThis as any).Temporal === "undefined") {
+  (globalThis as any).Temporal = Temporal;
+}
+
 import postgres from "@prisma/orm-postgres/runtime";
 
 import type { Contract } from "./contract.d";

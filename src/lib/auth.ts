@@ -1,87 +1,67 @@
-import crypto from "crypto";
-import { db } from "@/src/prisma/db";
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 
-export type SessionUser = {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-};
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut,
+} = NextAuth({
+  providers: [
+    Credentials({
+      name: "Credentials",
 
-export type Session = {
-  user?: SessionUser;
-};
+      credentials: {
+        email: {
+          label: "Email",
+          type: "email",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+        },
+      },
 
-export async function auth(): Promise<Session | null> {
-  try {
-    const existingUser = await db.orm.public.User.first();
-    if (existingUser) {
-      const membership = await db.orm.public.WorkspaceMember
-        .where({ userId: existingUser.id })
-        .first();
-
-      if (!membership) {
-        let ws = await db.orm.public.Workspace.first();
-        if (!ws) {
-          ws = await db.orm.public.Workspace.create({
-            id: crypto.randomUUID(),
-            name: "Main Workspace",
-            slug: "main",
-          });
+      async authorize(credentials) {
+        if (
+          credentials?.email !==
+            process.env.DEV_AUTH_EMAIL ||
+          credentials?.password !==
+            process.env.DEV_AUTH_PASSWORD
+        ) {
+          return null;
         }
-        await db.orm.public.WorkspaceMember.create({
-          id: crypto.randomUUID(),
-          userId: existingUser.id,
-          workspaceId: ws.id,
-          role: "OWNER",
-        });
+
+        return {
+          id: process.env.DEV_AUTH_USER_ID!,
+          name: "Development User",
+          email: credentials.email as string,
+        };
+      },
+    }),
+  ],
+
+  session: {
+    strategy: "jwt",
+  },
+
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
       }
 
-      return {
-        user: {
-          id: existingUser.id,
-          name: existingUser.name,
-          email: existingUser.email,
-        },
-      };
-    }
+      return token;
+    },
 
-    const userId = crypto.randomUUID();
-    const workspaceId = crypto.randomUUID();
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id =
+          (token.id as string) ??
+          (token.sub as string);
+      }
 
-    const user = await db.orm.public.User.create({
-      id: userId,
-      email: "demo@autozip.ai",
-      name: "Demo Admin",
-    });
-
-    const workspace = await db.orm.public.Workspace.create({
-      id: workspaceId,
-      name: "Main Workspace",
-      slug: "main",
-    });
-
-    await db.orm.public.WorkspaceMember.create({
-      id: crypto.randomUUID(),
-      userId: user.id,
-      workspaceId: workspace.id,
-      role: "OWNER",
-    });
-
-    return {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-    };
-  } catch (error) {
-    console.error("Auth helper error:", error);
-    return {
-      user: {
-        id: "00000000-0000-0000-0000-000000000001",
-        email: "demo@autozip.ai",
-        name: "Demo User",
-      },
-    };
-  }
-}
+      return session;
+    },
+  },
+});

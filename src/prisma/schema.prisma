@@ -1,0 +1,38 @@
+enum IntegrationProvider {
+  GROK
+  GOOGLE
+  GMAIL
+  SLACK
+  WHATSAPP
+  STRIPE
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+model Integration {
+  id          String              @id @default(cuid())
+  workspaceId String
+
+  provider    IntegrationProvider
+  name        String
+  status      IntegrationStatus   @default(DISCONNECTED)
+
+  credentials String?
+  metadata    Json?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   Workspace @relation(
+    fields: [workspaceId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId])
+}

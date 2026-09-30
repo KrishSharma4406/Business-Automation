@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
+
 import { db } from "@/src/prisma/db";
+
 import {
   getWorkspaceIntegration,
   updateIntegration,
   deleteIntegration,
 } from "@/src/lib/integrations/service";
+
 import { sanitizeIntegration } from "@/src/lib/integrations/sanitize";
-import { updateIntegrationSchema } from "@/src/lib/validations/integration";
+
+import {
+  updateIntegrationSchema,
+} from "@/src/lib/validations/integration";
+
 import { auth } from "@/src/lib/auth";
 
 type RouteContext = {
@@ -15,16 +22,25 @@ type RouteContext = {
   }>;
 };
 
-async function getWorkspaceId(userId: string) {
-  const membership = await db.orm.public.WorkspaceMember
-    .where({
-      userId,
-    })
-    .select("workspaceId")
-    .first();
+async function getWorkspaceId(
+  userId: string
+) {
+  const membership =
+    await db.orm.public.WorkspaceMember
+      .where({
+        userId,
+      })
+      .select("workspaceId")
+      .first();
 
   return membership?.workspaceId;
 }
+
+/*
+|--------------------------------------------------------------------------
+| GET /api/integrations/:id
+|--------------------------------------------------------------------------
+*/
 
 export async function GET(
   request: Request,
@@ -44,7 +60,10 @@ export async function GET(
       );
     }
 
-    const workspaceId = await getWorkspaceId(session.user.id);
+    const workspaceId =
+      await getWorkspaceId(
+        session.user.id
+      );
 
     if (!workspaceId) {
       return NextResponse.json(
@@ -57,12 +76,14 @@ export async function GET(
       );
     }
 
-    const { id } = await context.params;
+    const { id } =
+      await context.params;
 
-    const integration = await getWorkspaceIntegration(
-      workspaceId,
-      id
-    );
+    const integration =
+      await getWorkspaceIntegration(
+        workspaceId,
+        id
+      );
 
     if (!integration) {
       return NextResponse.json(
@@ -76,14 +97,21 @@ export async function GET(
     }
 
     return NextResponse.json({
-      integration: sanitizeIntegration(integration),
+      integration:
+        sanitizeIntegration(
+          integration
+        ),
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "GET /api/integrations/[id] error:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Failed to fetch integration",
+        error:
+          "Failed to fetch integration",
       },
       {
         status: 500,
@@ -91,6 +119,12 @@ export async function GET(
     );
   }
 }
+
+/*
+|--------------------------------------------------------------------------
+| PATCH /api/integrations/:id
+|--------------------------------------------------------------------------
+*/
 
 export async function PATCH(
   request: Request,
@@ -110,7 +144,10 @@ export async function PATCH(
       );
     }
 
-    const workspaceId = await getWorkspaceId(session.user.id);
+    const workspaceId =
+      await getWorkspaceId(
+        session.user.id
+      );
 
     if (!workspaceId) {
       return NextResponse.json(
@@ -123,16 +160,23 @@ export async function PATCH(
       );
     }
 
-    const { id } = await context.params;
-    const body = await request.json();
+    const { id } =
+      await context.params;
 
-    const validation = updateIntegrationSchema.safeParse(body);
+    const body =
+      await request.json();
+
+    const validation =
+      updateIntegrationSchema.safeParse(
+        body
+      );
 
     if (!validation.success) {
       return NextResponse.json(
         {
           error: "Invalid request",
-          details: validation.error.flatten(),
+          details:
+            validation.error.flatten(),
         },
         {
           status: 400,
@@ -140,17 +184,21 @@ export async function PATCH(
       );
     }
 
-    const integration = await updateIntegration(
-      workspaceId,
-      id,
-      validation.data
-    );
+    const integration =
+      await updateIntegration(
+        workspaceId,
+        id,
+        validation.data
+      );
 
     return NextResponse.json({
       integration,
     });
   } catch (error: any) {
-    if (error?.message === "Integration not found") {
+    if (
+      error?.message ===
+      "Integration not found"
+    ) {
       return NextResponse.json(
         {
           error: error.message,
@@ -161,11 +209,15 @@ export async function PATCH(
       );
     }
 
-    console.error(error);
+    console.error(
+      "PATCH /api/integrations/[id] error:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Failed to update integration",
+        error:
+          "Failed to update integration",
       },
       {
         status: 500,
@@ -173,6 +225,12 @@ export async function PATCH(
     );
   }
 }
+
+/*
+|--------------------------------------------------------------------------
+| DELETE /api/integrations/:id
+|--------------------------------------------------------------------------
+*/
 
 export async function DELETE(
   request: Request,
@@ -192,7 +250,10 @@ export async function DELETE(
       );
     }
 
-    const workspaceId = await getWorkspaceId(session.user.id);
+    const workspaceId =
+      await getWorkspaceId(
+        session.user.id
+      );
 
     if (!workspaceId) {
       return NextResponse.json(
@@ -205,13 +266,23 @@ export async function DELETE(
       );
     }
 
-    const { id } = await context.params;
+    const { id } =
+      await context.params;
 
-    const result = await deleteIntegration(workspaceId, id);
+    const result =
+      await deleteIntegration(
+        workspaceId,
+        id
+      );
 
-    return NextResponse.json(result);
+    return NextResponse.json(
+      result
+    );
   } catch (error: any) {
-    if (error?.message === "Integration not found") {
+    if (
+      error?.message ===
+      "Integration not found"
+    ) {
       return NextResponse.json(
         {
           error: error.message,
@@ -222,11 +293,15 @@ export async function DELETE(
       );
     }
 
-    console.error(error);
+    console.error(
+      "DELETE /api/integrations/[id] error:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Failed to delete integration",
+        error:
+          "Failed to delete integration",
       },
       {
         status: 500,

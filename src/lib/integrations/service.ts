@@ -1,24 +1,36 @@
 import crypto from "crypto";
+
 import { db } from "@/src/prisma/db";
 import { encrypt } from "./encryption";
 
+type IntegrationProvider =
+  | "GROK"
+  | "GOOGLE"
+  | "GMAIL"
+  | "SLACK"
+  | "WHATSAPP"
+  | "STRIPE";
+
+type IntegrationStatus =
+  | "CONNECTED"
+  | "DISCONNECTED"
+  | "ERROR";
+
 type CreateIntegrationInput = {
   workspaceId: string;
-  provider:
-    | "GROK"
-    | "GOOGLE"
-    | "GMAIL"
-    | "SLACK"
-    | "WHATSAPP"
-    | "STRIPE";
+  provider: IntegrationProvider;
   name: string;
   credentials: Record<string, string>;
   metadata?: Record<string, unknown>;
 };
 
-export async function getWorkspaceIntegrations(workspaceId: string) {
+export async function getWorkspaceIntegrations(
+  workspaceId: string
+) {
   return await db.orm.public.Integration
-    .where({ workspaceId })
+    .where({
+      workspaceId,
+    })
     .orderBy((i) => i.createdAt.desc())
     .select(
       "id",
@@ -33,16 +45,21 @@ export async function getWorkspaceIntegrations(workspaceId: string) {
     .all();
 }
 
-export async function createIntegration(input: CreateIntegrationInput) {
-  const existing = await db.orm.public.Integration
-    .where({
-      workspaceId: input.workspaceId,
-      provider: input.provider,
-    })
-    .first();
+export async function createIntegration(
+  input: CreateIntegrationInput
+) {
+  const existing =
+    await db.orm.public.Integration
+      .where({
+        workspaceId: input.workspaceId,
+        provider: input.provider,
+      })
+      .first();
 
   if (existing) {
-    throw new Error("This integration is already connected");
+    throw new Error(
+      "This integration is already connected"
+    );
   }
 
   const encryptedCredentials = encrypt(
@@ -50,14 +67,29 @@ export async function createIntegration(input: CreateIntegrationInput) {
   );
 
   return await db.orm.public.Integration
-    .select("id", "provider", "name", "status", "metadata", "createdAt", "updatedAt")
+    .select(
+      "id",
+      "provider",
+      "name",
+      "status",
+      "metadata",
+      "createdAt",
+      "updatedAt"
+    )
     .create({
       id: crypto.randomUUID(),
+
       workspaceId: input.workspaceId,
+
       provider: input.provider,
+
       name: input.name,
+
       status: "CONNECTED",
-      credentials: { encrypted: encryptedCredentials },
+
+      // Prisma schema says credentials is String?
+      credentials: encryptedCredentials,
+
       metadata: input.metadata ?? {},
     });
 }
@@ -89,45 +121,63 @@ export async function updateIntegration(
   integrationId: string,
   data: {
     name?: string;
-    status?: "CONNECTED" | "DISCONNECTED" | "ERROR";
+    status?: IntegrationStatus;
     credentials?: Record<string, string>;
     metadata?: Record<string, unknown>;
   }
 ) {
-  const integration = await db.orm.public.Integration
-    .where({
-      id: integrationId,
-      workspaceId,
-    })
-    .first();
+  const integration =
+    await db.orm.public.Integration
+      .where({
+        id: integrationId,
+        workspaceId,
+      })
+      .first();
 
   if (!integration) {
-    throw new Error("Integration not found");
-  }
-
-  let credentialsObj = integration.credentials;
-
-  if (data.credentials) {
-    credentialsObj = {
-      encrypted: encrypt(JSON.stringify(data.credentials)),
-    };
+    throw new Error(
+      "Integration not found"
+    );
   }
 
   const updateData: {
     name?: string;
-    status?: "CONNECTED" | "DISCONNECTED" | "ERROR";
-    credentials?: any;
-    metadata?: any;
+    status?: IntegrationStatus;
+    credentials?: string;
+    metadata?: Record<string, unknown>;
   } = {};
 
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.status !== undefined) updateData.status = data.status;
-  if (data.credentials !== undefined) updateData.credentials = credentialsObj;
-  if (data.metadata !== undefined) updateData.metadata = data.metadata;
+  if (data.name !== undefined) {
+    updateData.name = data.name;
+  }
+
+  if (data.status !== undefined) {
+    updateData.status = data.status;
+  }
+
+  if (data.credentials !== undefined) {
+    updateData.credentials = encrypt(
+      JSON.stringify(data.credentials)
+    );
+  }
+
+  if (data.metadata !== undefined) {
+    updateData.metadata = data.metadata;
+  }
 
   return await db.orm.public.Integration
-    .where({ id: integration.id })
-    .select("id", "provider", "name", "status", "metadata", "createdAt", "updatedAt")
+    .where({
+      id: integration.id,
+    })
+    .select(
+      "id",
+      "provider",
+      "name",
+      "status",
+      "metadata",
+      "createdAt",
+      "updatedAt"
+    )
     .update(updateData);
 }
 
@@ -135,19 +185,24 @@ export async function deleteIntegration(
   workspaceId: string,
   integrationId: string
 ) {
-  const integration = await db.orm.public.Integration
-    .where({
-      id: integrationId,
-      workspaceId,
-    })
-    .first();
+  const integration =
+    await db.orm.public.Integration
+      .where({
+        id: integrationId,
+        workspaceId,
+      })
+      .first();
 
   if (!integration) {
-    throw new Error("Integration not found");
+    throw new Error(
+      "Integration not found"
+    );
   }
 
   await db.orm.public.Integration
-    .where({ id: integration.id })
+    .where({
+      id: integration.id,
+    })
     .delete();
 
   return {

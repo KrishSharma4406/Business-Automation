@@ -1,13 +1,6 @@
 export function sanitizeIntegration(
   integration: any
 ) {
-  const hasCreds = Boolean(
-    integration.credentials &&
-      (typeof integration.credentials === "object"
-        ? (integration.credentials.encrypted || Object.keys(integration.credentials).length > 0)
-        : Boolean(integration.credentials))
-  );
-
   return {
     id: integration.id,
     provider: integration.provider,
@@ -16,6 +9,10 @@ export function sanitizeIntegration(
     metadata: integration.metadata,
     createdAt: integration.createdAt,
     updatedAt: integration.updatedAt,
-    hasCredentials: hasCreds,
+
+    hasCredentials:
+      Boolean(
+        integration.credentials
+      ),
   };
 }

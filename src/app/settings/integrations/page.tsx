@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import IntegrationCard from "@/src/components/integrations/integration-card";
 
 type Integration = {
   id: string;
@@ -12,41 +11,7 @@ type Integration = {
     | "DISCONNECTED"
     | "ERROR";
   metadata?: Record<string, unknown>;
-  hasCredentials: boolean;
 };
-
-const providers = [
-  {
-    provider: "GROK",
-    name: "Grok",
-    description: "AI and automation",
-  },
-  {
-    provider: "GOOGLE",
-    name: "Google",
-    description: "Google Workspace",
-  },
-  {
-    provider: "GMAIL",
-    name: "Gmail",
-    description: "Email automation",
-  },
-  {
-    provider: "SLACK",
-    name: "Slack",
-    description: "Team communication",
-  },
-  {
-    provider: "WHATSAPP",
-    name: "WhatsApp",
-    description: "Customer communication",
-  },
-  {
-    provider: "STRIPE",
-    name: "Stripe",
-    description: "Payments",
-  },
-];
 
 export default function IntegrationsPage() {
   const [integrations, setIntegrations] =
@@ -58,7 +23,7 @@ export default function IntegrationsPage() {
   const [error, setError] =
     useState("");
 
-  async function loadIntegrations() {
+  async function fetchIntegrations() {
     try {
       setLoading(true);
       setError("");
@@ -67,22 +32,24 @@ export default function IntegrationsPage() {
         "/api/integrations"
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
           data.error ||
-            "Failed to load integrations"
+            "Failed to fetch integrations"
         );
       }
 
       setIntegrations(
-        data.integrations
+        data.integrations || []
       );
-    } catch (error: any) {
+    } catch (error) {
+      console.error(error);
+
       setError(
-        error.message ||
-          "Something went wrong"
+        "Unable to load integrations"
       );
     } finally {
       setLoading(false);
@@ -90,28 +57,32 @@ export default function IntegrationsPage() {
   }
 
   useEffect(() => {
-    loadIntegrations();
+    fetchIntegrations();
   }, []);
-
-  function getIntegration(
-    provider: string
-  ) {
-    return integrations.find(
-      (integration) =>
-        integration.provider ===
-        provider
-    );
-  }
 
   if (loading) {
     return (
       <main className="p-8">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-3xl font-bold">
           Integrations
         </h1>
 
-        <div className="mt-8">
+        <p className="mt-4 text-gray-500">
           Loading integrations...
+        </p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="p-8">
+        <h1 className="text-3xl font-bold">
+          Integrations
+        </h1>
+
+        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
+          {error}
         </div>
       </main>
     );
@@ -125,49 +96,55 @@ export default function IntegrationsPage() {
         </h1>
 
         <p className="mt-2 text-gray-500">
-          Connect the tools your business
-          uses with Autozip.
+          Connect your business tools with
+          Autozip.
         </p>
       </div>
 
-      {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          {error}
-        </div>
-      )}
-
-      {integrations.length === 0 && (
-        <div className="mb-8 rounded-xl border p-8 text-center">
+      {integrations.length === 0 ? (
+        <div className="rounded-xl border p-10 text-center">
           <h2 className="text-xl font-semibold">
-            No integrations yet
+            No integrations connected
           </h2>
 
           <p className="mt-2 text-gray-500">
-            Connect your favorite tools to
-            unlock Autozip automations.
+            Connect a service to get started.
           </p>
         </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {integrations.map(
+            (integration) => (
+              <div
+                key={integration.id}
+                className="rounded-xl border bg-white p-6 shadow-sm"
+              >
+                <h2 className="text-xl font-semibold">
+                  {integration.name}
+                </h2>
+
+                <p className="mt-2 text-sm text-gray-500">
+                  {integration.provider}
+                </p>
+
+                <div className="mt-4">
+                  {integration.status ===
+                  "CONNECTED" ? (
+                    <span className="text-green-600">
+                      ● Connected
+                    </span>
+                  ) : (
+                    <span className="text-gray-500">
+                      ○{" "}
+                      {integration.status}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          )}
+        </div>
       )}
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {providers.map((provider) => {
-          const integration =
-            getIntegration(
-              provider.provider
-            );
-
-          return (
-            <IntegrationCard
-              key={provider.provider}
-              provider={provider}
-              integration={integration}
-              onRefresh={
-                loadIntegrations
-              }
-            />
-          );
-        })}
-      </div>
     </main>
   );
 }

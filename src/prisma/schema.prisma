@@ -13,6 +13,44 @@ enum IntegrationStatus {
   ERROR
 }
 
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members      WorkspaceMember[]
+  integrations Integration[]
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace Workspace @relation(
+    fields: [workspaceId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
 model Integration {
   id          String              @id @default(cuid())
   workspaceId String
@@ -27,7 +65,7 @@ model Integration {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  workspace   Workspace @relation(
+  workspace Workspace @relation(
     fields: [workspaceId],
     references: [id],
     onDelete: Cascade

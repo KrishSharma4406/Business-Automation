@@ -23,21 +23,32 @@ export const {
       },
 
       async authorize(credentials) {
-        if (
-          credentials?.email !==
-            process.env.DEV_AUTH_EMAIL ||
-          credentials?.password !==
-            process.env.DEV_AUTH_PASSWORD
-        ) {
-          return null;
-        }
+  console.log("LOGIN ATTEMPT");
+  console.log("Email received:", credentials?.email);
+  console.log("Expected email:", process.env.DEV_AUTH_EMAIL);
+  console.log("Password received:", credentials?.password ? "YES" : "NO");
+  console.log(
+    "Password matches:",
+    credentials?.password === process.env.DEV_AUTH_PASSWORD
+  );
+  console.log("User ID:", process.env.DEV_AUTH_USER_ID);
 
-        return {
-          id: process.env.DEV_AUTH_USER_ID!,
-          name: "Development User",
-          email: credentials.email as string,
-        };
-      },
+  if (
+    credentials?.email !== process.env.DEV_AUTH_EMAIL ||
+    credentials?.password !== process.env.DEV_AUTH_PASSWORD
+  ) {
+    console.log("AUTH FAILED");
+    return null;
+  }
+
+  console.log("AUTH SUCCESS");
+
+  return {
+    id: process.env.DEV_AUTH_USER_ID!,
+    name: "Development User",
+    email: credentials.email as string,
+  };
+},
     }),
   ],
 

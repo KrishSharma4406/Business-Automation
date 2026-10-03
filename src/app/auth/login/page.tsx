@@ -2,10 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +34,11 @@ export default function Page() {
       return;
     }
 
-    router.push("/dashboard/settings/integrations");
+    const callbackUrl =
+      searchParams.get("callbackUrl") ||
+      "/dashboard";
+
+    router.push(callbackUrl);
     router.refresh();
   }
 

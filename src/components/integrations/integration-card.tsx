@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ConnectModal from "./connect-modal";
 
 type Props = {
     provider: {
@@ -55,7 +56,14 @@ export default function IntegrationCard({
                 await fetch(
                     `/api/integrations/${integration.id}`,
                     {
-                        method: "DELETE",
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+                        },
+                        body: JSON.stringify({
+                            status: "DISCONNECTED",
+                        }),
                     }
                 );
 

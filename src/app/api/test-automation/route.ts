@@ -3,6 +3,18 @@ import { NextResponse } from "next/server";
 import { executeAutomation } from "@/src/lib/automation-engine";
 
 export async function POST() {
+  if (process.env.NODE_ENV !== "development") {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Not found",
+      },
+      {
+        status: 404,
+      }
+    );
+  }
+
   try {
     const result = await executeAutomation({
       trigger: "new_lead",

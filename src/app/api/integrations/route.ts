@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { db } from "@/src/prisma/db";
 import {
   createIntegration,
   getWorkspaceIntegrations,
@@ -7,6 +6,7 @@ import {
 import { sanitizeIntegration } from "@/src/lib/integrations/sanitize";
 import { createIntegrationSchema } from "@/src/lib/validations/integration";
 import { auth } from "@/src/lib/auth";
+import { getWorkspaceForUser } from "@/src/lib/workspace";
 
 export async function GET() {
   try {
@@ -23,12 +23,9 @@ export async function GET() {
       );
     }
 
-    const membership = await db.orm.public.WorkspaceMember
-      .where({
-        userId: session.user.id,
-      })
-      .select("workspaceId")
-      .first();
+    const membership = await getWorkspaceForUser(
+      session.user.id
+    );
 
     if (!membership) {
       return NextResponse.json(
@@ -77,12 +74,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const membership = await db.orm.public.WorkspaceMember
-      .where({
-        userId: session.user.id,
-      })
-      .select("workspaceId")
-      .first();
+    const membership = await getWorkspaceForUser(
+      session.user.id
+    );
 
     if (!membership) {
       return NextResponse.json(
@@ -118,7 +112,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        integration,
+        integration: sanitizeIntegration(integration),
       },
       {
         status: 201,

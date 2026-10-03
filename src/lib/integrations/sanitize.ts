@@ -1,3 +1,5 @@
+import { hasStoredCredentials } from "./credentials";
+
 export function sanitizeIntegration(
   integration: any
 ) {
@@ -10,9 +12,8 @@ export function sanitizeIntegration(
     createdAt: integration.createdAt,
     updatedAt: integration.updatedAt,
 
-    hasCredentials:
-      Boolean(
-        integration.credentials
-      ),
+    hasCredentials: hasStoredCredentials(
+      integration.credentials
+    ),
   };
 }

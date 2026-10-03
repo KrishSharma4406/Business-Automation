@@ -25,9 +25,29 @@ export async function executeAutomation(
         message: input.data.message,
       });
 
+      const minimumScore =
+        input.config?.minimumScore ?? 0;
+
+      const meetsThreshold =
+        result.score >= minimumScore;
+
+      const sideEffects: string[] = [];
+
+      if (
+        input.config?.notifyOwner &&
+        meetsThreshold
+      ) {
+        sideEffects.push(
+          "Owner notification queued."
+        );
+      }
+
       return {
         success: true,
         action: input.action,
+        meetsThreshold,
+        minimumScore,
+        sideEffects,
         result,
       };
     }

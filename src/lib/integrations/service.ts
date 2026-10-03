@@ -2,6 +2,7 @@ import crypto from "crypto";
 
 import { db } from "@/src/prisma/db";
 import { encrypt } from "./encryption";
+import { wrapEncryptedCredentials } from "./credentials";
 
 type IntegrationProvider =
   | "GROK"
@@ -23,6 +24,16 @@ type CreateIntegrationInput = {
   credentials: Record<string, string>;
   metadata?: Record<string, unknown>;
 };
+
+const integrationSelect = [
+  "id",
+  "provider",
+  "name",
+  "status",
+  "metadata",
+  "createdAt",
+  "updatedAt",
+] as const;
 
 export async function getWorkspaceIntegrations(
   workspaceId: string
@@ -56,26 +67,32 @@ export async function createIntegration(
       })
       .first();
 
-  if (existing) {
-    throw new Error(
-      "This integration is already connected"
-    );
-  }
-
-  const encryptedCredentials = encrypt(
-    JSON.stringify(input.credentials)
+  const encryptedCredentials = wrapEncryptedCredentials(
+    encrypt(JSON.stringify(input.credentials))
   );
 
+  if (existing) {
+    if (existing.status === "CONNECTED") {
+      throw new Error(
+        "This integration is already connected"
+      );
+    }
+
+    return await db.orm.public.Integration
+      .where({
+        id: existing.id,
+      })
+      .select(...integrationSelect)
+      .update({
+        name: input.name,
+        status: "CONNECTED",
+        credentials: encryptedCredentials as any,
+        metadata: (input.metadata ?? {}) as any,
+      });
+  }
+
   return await db.orm.public.Integration
-    .select(
-      "id",
-      "provider",
-      "name",
-      "status",
-      "metadata",
-      "createdAt",
-      "updatedAt"
-    )
+    .select(...integrationSelect)
     .create({
       id: crypto.randomUUID(),
 
@@ -87,10 +104,9 @@ export async function createIntegration(
 
       status: "CONNECTED",
 
-      // Prisma schema says credentials is String?
-      credentials: encryptedCredentials,
+      credentials: encryptedCredentials as any,
 
-      metadata: input.metadata ?? {},
+      metadata: (input.metadata ?? {}) as any,
     });
 }
 
@@ -143,7 +159,7 @@ export async function updateIntegration(
   const updateData: {
     name?: string;
     status?: IntegrationStatus;
-    credentials?: string;
+    credentials?: ReturnType<typeof wrapEncryptedCredentials>;
     metadata?: Record<string, unknown>;
   } = {};
 
@@ -156,8 +172,8 @@ export async function updateIntegration(
   }
 
   if (data.credentials !== undefined) {
-    updateData.credentials = encrypt(
-      JSON.stringify(data.credentials)
+    updateData.credentials = wrapEncryptedCredentials(
+      encrypt(JSON.stringify(data.credentials))
     );
   }
 
@@ -169,16 +185,8 @@ export async function updateIntegration(
     .where({
       id: integration.id,
     })
-    .select(
-      "id",
-      "provider",
-      "name",
-      "status",
-      "metadata",
-      "createdAt",
-      "updatedAt"
-    )
-    .update(updateData);
+    .select(...integrationSelect)
+    .update(updateData as any);
 }
 
 export async function deleteIntegration(

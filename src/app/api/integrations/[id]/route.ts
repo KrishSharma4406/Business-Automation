@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { db } from "@/src/prisma/db";
-
 import {
   getWorkspaceIntegration,
   updateIntegration,
@@ -15,6 +13,7 @@ import {
 } from "@/src/lib/validations/integration";
 
 import { auth } from "@/src/lib/auth";
+import { getWorkspaceForUser } from "@/src/lib/workspace";
 
 type RouteContext = {
   params: Promise<{
@@ -26,12 +25,7 @@ async function getWorkspaceId(
   userId: string
 ) {
   const membership =
-    await db.orm.public.WorkspaceMember
-      .where({
-        userId,
-      })
-      .select("workspaceId")
-      .first();
+    await getWorkspaceForUser(userId);
 
   return membership?.workspaceId;
 }
@@ -192,7 +186,10 @@ export async function PATCH(
       );
 
     return NextResponse.json({
-      integration,
+      integration:
+        sanitizeIntegration(
+          integration
+        ),
     });
   } catch (error: any) {
     if (

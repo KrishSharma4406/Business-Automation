@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const CreateLeadSchema = z.object({
-  businessId: z.string().uuid(),
+  businessId: z.string().uuid().optional(),
 
   name: z.string().min(2),
 

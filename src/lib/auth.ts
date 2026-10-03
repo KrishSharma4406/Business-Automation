@@ -7,6 +7,10 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
+  secret: process.env.AUTH_SECRET,
+
+  trustHost: true,
+
   providers: [
     Credentials({
       name: "Credentials",
@@ -23,34 +27,25 @@ export const {
       },
 
       async authorize(credentials) {
-  console.log("LOGIN ATTEMPT");
-  console.log("Email received:", credentials?.email);
-  console.log("Expected email:", process.env.DEV_AUTH_EMAIL);
-  console.log("Password received:", credentials?.password ? "YES" : "NO");
-  console.log(
-    "Password matches:",
-    credentials?.password === process.env.DEV_AUTH_PASSWORD
-  );
-  console.log("User ID:", process.env.DEV_AUTH_USER_ID);
+        if (
+          credentials?.email !== process.env.DEV_AUTH_EMAIL ||
+          credentials?.password !== process.env.DEV_AUTH_PASSWORD
+        ) {
+          return null;
+        }
 
-  if (
-    credentials?.email !== process.env.DEV_AUTH_EMAIL ||
-    credentials?.password !== process.env.DEV_AUTH_PASSWORD
-  ) {
-    console.log("AUTH FAILED");
-    return null;
-  }
-
-  console.log("AUTH SUCCESS");
-
-  return {
-    id: process.env.DEV_AUTH_USER_ID!,
-    name: "Development User",
-    email: credentials.email as string,
-  };
-},
+        return {
+          id: process.env.DEV_AUTH_USER_ID!,
+          name: "Development User",
+          email: credentials.email as string,
+        };
+      },
     }),
   ],
+
+  pages: {
+    signIn: "/auth/login",
+  },
 
   session: {
     strategy: "jwt",

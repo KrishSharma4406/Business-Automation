@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { qualifyLead } from "@/src/lib/ai/lead-qualification";
 
 export async function POST() {
+  if (process.env.NODE_ENV !== "development") {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Not found",
+      },
+      {
+        status: 404,
+      }
+    );
+  }
+
   try {
     const result = await qualifyLead({
       name: "Rahul Sharma",
@@ -21,8 +33,10 @@ export async function POST() {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "AI qualification failed.",
-        details: error,
+        error:
+          error instanceof Error
+            ? error.message
+            : "AI qualification failed.",
       },
       {
         status: 500,

@@ -18,9 +18,6 @@ export default function LeadsPage() {
     const formData = new FormData(event.currentTarget);
 
     const body = {
-      businessId:
-        "550e8400-e29b-41d4-a716-446655440000",
-
       name: formData.get("name"),
 
       email: formData.get("email"),

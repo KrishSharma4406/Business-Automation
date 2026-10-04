@@ -88,8 +88,7 @@ export default function ConnectModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(0, 0, 0, 0.7)",
-        backdropFilter: "blur(8px)",
+        background: "var(--bg-overlay)",
         padding: "20px",
       }}
       onClick={(e) => {
@@ -99,38 +98,37 @@ export default function ConnectModal({
       <div
         style={{
           width: "100%",
-          maxWidth: "440px",
-          padding: "28px",
-          borderRadius: "20px",
-          background: "linear-gradient(145deg, #1e1e2e, #16161f)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 25px 60px rgba(0,0,0,0.5)",
-          animation: "modalSlide 0.25s ease-out",
+          maxWidth: "420px",
+          padding: "24px",
+          borderRadius: "var(--radius-lg)",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-default)",
+          animation: "fadeIn 0.2s ease-out",
         }}
       >
         {/* Header */}
         <div
           style={{
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "space-between",
-            marginBottom: "24px",
+            marginBottom: "20px",
           }}
         >
           <div>
-            <h2
+            <p
               style={{
-                fontSize: "20px",
-                fontWeight: 700,
-                color: "#f4f4f5",
+                fontSize: "15px",
+                fontWeight: 600,
+                color: "var(--text-primary)",
               }}
             >
               {isUpdate ? "Update" : "Connect"} {provider.name}
-            </h2>
+            </p>
             <p
               style={{
-                fontSize: "13px",
-                color: "#71717a",
+                fontSize: "12px",
+                color: "var(--text-muted)",
                 marginTop: "4px",
               }}
             >
@@ -141,21 +139,16 @@ export default function ConnectModal({
           <button
             onClick={onClose}
             style={{
-              width: "32px",
-              height: "32px",
-              borderRadius: "8px",
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.04)",
-              color: "#71717a",
+              padding: "4px 8px",
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--border-default)",
+              background: "transparent",
+              color: "var(--text-muted)",
               cursor: "pointer",
-              fontSize: "16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.15s ease",
+              fontSize: "12px",
             }}
           >
-            ✕
+            Close
           </button>
         </div>
 
@@ -163,10 +156,10 @@ export default function ConnectModal({
         <label
           style={{
             display: "block",
-            fontSize: "13px",
-            fontWeight: 600,
-            color: "#a1a1aa",
-            marginBottom: "8px",
+            fontSize: "12px",
+            fontWeight: 500,
+            color: "var(--text-secondary)",
+            marginBottom: "6px",
           }}
         >
           API Key
@@ -183,47 +176,37 @@ export default function ConnectModal({
           style={{
             boxSizing: "border-box",
             width: "100%",
-            padding: "12px 16px",
-            borderRadius: "12px",
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(0,0,0,0.3)",
-            color: "#f4f4f5",
-            fontSize: "14px",
+            padding: "10px 12px",
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--border-default)",
+            background: "var(--bg-input)",
+            color: "var(--text-primary)",
+            fontSize: "13px",
             outline: "none",
-            transition: "border-color 0.15s ease",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "rgba(99, 102, 241, 0.5)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
           }}
           autoFocus
         />
 
         <p
           style={{
-            marginTop: "8px",
-            fontSize: "12px",
-            color: "#52525b",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
+            marginTop: "6px",
+            fontSize: "11px",
+            color: "var(--text-muted)",
           }}
         >
-          🔒 Credentials are encrypted with AES-256-GCM before storage
+          Credentials are encrypted with AES-256-GCM before storage
         </p>
 
         {/* Error */}
         {error && (
           <div
             style={{
-              marginTop: "16px",
-              padding: "12px 16px",
-              borderRadius: "10px",
-              background: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-              color: "#f87171",
+              marginTop: "14px",
+              padding: "10px 14px",
+              borderRadius: "var(--radius-md)",
+              background: "var(--red-subtle)",
+              border: "1px solid rgba(231, 76, 60, 0.25)",
+              color: "var(--red)",
               fontSize: "13px",
             }}
           >
@@ -236,22 +219,21 @@ export default function ConnectModal({
           style={{
             display: "flex",
             justifyContent: "flex-end",
-            gap: "10px",
-            marginTop: "24px",
+            gap: "8px",
+            marginTop: "20px",
           }}
         >
           <button
             onClick={onClose}
             style={{
-              padding: "10px 20px",
-              borderRadius: "10px",
-              border: "1px solid rgba(255,255,255,0.08)",
+              padding: "8px 16px",
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--border-default)",
               background: "transparent",
-              color: "#a1a1aa",
+              color: "var(--text-secondary)",
               fontSize: "13px",
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: "pointer",
-              transition: "all 0.15s ease",
             }}
           >
             Cancel
@@ -261,16 +243,15 @@ export default function ConnectModal({
             onClick={submit}
             disabled={loading}
             style={{
-              padding: "10px 24px",
-              borderRadius: "10px",
+              padding: "8px 20px",
+              borderRadius: "var(--radius-md)",
               border: "none",
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              background: "var(--accent)",
               color: "#fff",
               fontSize: "13px",
               fontWeight: 600,
               cursor: loading ? "not-allowed" : "pointer",
               opacity: loading ? 0.6 : 1,
-              transition: "all 0.15s ease",
             }}
           >
             {loading
@@ -283,13 +264,6 @@ export default function ConnectModal({
           </button>
         </div>
       </div>
-
-      <style>{`
-        @keyframes modalSlide {
-          from { opacity: 0; transform: translateY(12px) scale(0.97); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
     </div>
   );
 }

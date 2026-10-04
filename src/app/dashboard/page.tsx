@@ -1,67 +1,127 @@
+"use client";
+
+import TopBar from "@/src/components/top-bar";
+
 export default function DashboardPage() {
   return (
-    <main className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-7xl">
-        <h1 className="text-3xl font-bold text-gray-900">
-          AI Business OS
-        </h1>
+    <>
+      <TopBar title="Dashboard" subtitle="Overview" />
 
-        <p className="mt-2 text-gray-600">
-          Manage your business with AI-powered automation.
-        </p>
+      <div style={{ padding: "24px", flex: 1 }}>
+        {/* Stats Row */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "16px",
+            marginBottom: "24px",
+          }}
+        >
+          <StatCard label="Total Customers" value="0" />
+          <StatCard label="Active Leads" value="0" />
+          <StatCard label="Conversations" value="0" />
+          <StatCard label="Automations" value="0" />
+        </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <DashboardCard
-            title="Customers"
-            value="0"
-            description="Total customers"
-          />
+        {/* Recent Activity */}
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-default)",
+            borderRadius: "var(--radius-lg)",
+          }}
+        >
+          <div
+            style={{
+              padding: "14px 20px",
+              borderBottom: "1px solid var(--border-default)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
+              Recent Activity
+            </span>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+              Last 7 days
+            </span>
+          </div>
 
-          <DashboardCard
-            title="Leads"
-            value="0"
-            description="Active leads"
-          />
+          <div style={{ padding: "40px 20px", textAlign: "center" }}>
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+              No recent activity yet.
+            </p>
+            <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px" }}>
+              Activity from customers, leads, and conversations will show up here.
+            </p>
+          </div>
+        </div>
 
-          <DashboardCard
-            title="Conversations"
-            value="0"
-            description="Customer conversations"
-          />
-
-          <DashboardCard
-            title="Automations"
-            value="0"
-            description="Active automations"
-          />
+        {/* Quick Actions */}
+        <div
+          style={{
+            marginTop: "16px",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "16px",
+          }}
+        >
+          <QuickAction title="Create Lead" description="Add and qualify a new lead with AI" href="/dashboard/leads" />
+          <QuickAction title="View Conversations" description="Manage customer conversations" href="/dashboard/conversations" />
+          <QuickAction title="Setup Integrations" description="Connect external tools and services" href="/dashboard/settings/integrations" />
         </div>
       </div>
-    </main>
+    </>
   );
 }
 
-function DashboardCard({
-  title,
-  value,
-  description,
-}: {
-  title: string;
-  value: string;
-  description: string;
-}) {
+function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm">
-      <h2 className="text-sm font-medium text-gray-500">
-        {title}
-      </h2>
-
-      <p className="mt-3 text-3xl font-bold text-gray-900">
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
+        padding: "18px 20px",
+      }}
+    >
+      <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "8px" }}>
+        {label}
+      </p>
+      <p style={{ fontSize: "24px", fontWeight: 700, color: "var(--text-primary)" }}>
         {value}
       </p>
+    </div>
+  );
+}
 
-      <p className="mt-2 text-sm text-gray-500">
+function QuickAction({ title, description, href }: { title: string; description: string; href: string }) {
+  return (
+    <a
+      href={href}
+      style={{
+        display: "block",
+        background: "var(--bg-surface)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-lg)",
+        padding: "18px 20px",
+        textDecoration: "none",
+        transition: "border-color 0.15s ease",
+      }}
+      onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.currentTarget.style.borderColor = "var(--border-active)";
+      }}
+      onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.currentTarget.style.borderColor = "var(--border-default)";
+      }}
+    >
+      <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
+        {title}
+      </p>
+      <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
         {description}
       </p>
-    </div>
+    </a>
   );
 }

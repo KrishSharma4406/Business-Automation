@@ -29,6 +29,7 @@ model Workspace {
 
   members      WorkspaceMember[]
   integrations Integration[]
+  conversations Conversation[]
 }
 
 model WorkspaceMember {
@@ -73,4 +74,62 @@ model Integration {
 
   @@unique([workspaceId, provider])
   @@index([workspaceId])
+}
+
+enum ConversationStatus {
+  OPEN
+  CLOSED
+  PENDING
+}
+
+enum ConversationChannel {
+  AI
+  EMAIL
+  WHATSAPP
+  SLACK
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+model Conversation {
+  id          String               @id @default(cuid())
+  workspaceId String
+  title       String?
+  status      ConversationStatus   @default(OPEN)
+  channel     ConversationChannel  @default(AI)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  workspace Workspace @relation(
+    fields: [workspaceId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String
+  role           MessageRole
+  content        String
+
+  createdAt DateTime @default(now())
+
+  conversation Conversation @relation(
+    fields: [conversationId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([conversationId])
 }

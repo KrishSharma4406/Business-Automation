@@ -3,6 +3,7 @@
 import TopBar from "@/src/components/top-bar";
 import AIMessageRenderer from "@/src/components/ai-message-renderer";
 import { useEffect, useRef, useState } from "react";
+import { formatConversationQuestion } from "@/src/lib/format-conversation-question";
 
 type Message = {
   role: string;
@@ -11,6 +12,7 @@ type Message = {
 
 type Conversation = {
   id: string;
+  title?: string;
   channel: string;
   status: string;
   messages: Message[];
@@ -27,16 +29,51 @@ export default function ConversationsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [channelFilter, setChannelFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredConversation, setHoveredConversation] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesTopRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const activeConvIdRef = useRef<string | null>(null);
+  const prevMsgCountRef = useRef<number>(0);
 
   useEffect(() => {
     loadConversations();
   }, []);
 
+  /* Scroll handling:
+     - When switching or selecting a conversation, always start at the top.
+     - Only scroll to bottom when a NEW message is added to the active conversation.
+  */
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeConversation?.messages, loading]);
+    const currentId = activeConversation?.id || null;
+    const currentCount = activeConversation?.messages?.length || 0;
+
+    // Check if the user selected or switched conversation
+    if (currentId !== activeConvIdRef.current) {
+      activeConvIdRef.current = currentId;
+      prevMsgCountRef.current = currentCount;
+
+      // Start from top of the page/chat
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = 0;
+      }
+      requestAnimationFrame(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = 0;
+        }
+      });
+      return;
+    }
+
+    // Same conversation: scroll down only when new message is sent/received
+    if (currentCount > prevMsgCountRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevMsgCountRef.current = currentCount;
+  }, [activeConversation?.id, activeConversation?.messages?.length, loading]);
 
   async function loadConversations() {
     try {
@@ -70,6 +107,46 @@ export default function ConversationsPage() {
     setActiveConversation(null);
     setInput("");
     setErrorMessage(null);
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = 0;
+    }
+  }
+
+  function selectConversation(conv: Conversation) {
+    setActiveConversation(conv);
+    /* Ensure chat starts from top of page when selecting previous chat */
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = 0;
+    }
+    setTimeout(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = 0;
+      }
+    }, 10);
+  }
+
+  async function deleteConversation(convId: string) {
+    if (deletingId) return;
+    if (!window.confirm("Are you sure you want to delete this conversation?")) return;
+    setDeletingId(convId);
+    try {
+      const res = await fetch(`/api/ai/conversations?id=${convId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setErrorMessage(err.error || "Failed to delete conversation");
+        return;
+      }
+      /* If we deleted the active conversation, clear it */
+      if (activeConversation?.id === convId) {
+        setActiveConversation(null);
+      }
+      /* Remove from local list */
+      setConversations((prev) => prev.filter((c) => c.id !== convId));
+    } catch {
+      setErrorMessage("Failed to delete conversation");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function sendMessage(text?: string) {
@@ -114,7 +191,17 @@ export default function ConversationsPage() {
 
   const filtered = conversations
     .filter((c) => statusFilter === "all" || c.status.toLowerCase() === statusFilter)
-    .filter((c) => channelFilter === "all" || c.channel.toLowerCase() === channelFilter);
+    .filter((c) => channelFilter === "all" || c.channel.toLowerCase() === channelFilter)
+    .filter((c) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      const title = (c.title || formatConversationQuestion(c)).toLowerCase();
+      const hasMatchInTitle = title.includes(q);
+      const hasMatchInMessages = c.messages?.some((m) => m.content?.toLowerCase().includes(q));
+      const hasMatchInChannel = c.channel?.toLowerCase().includes(q);
+      const hasMatchInId = c.id?.toLowerCase().includes(q);
+      return hasMatchInTitle || hasMatchInMessages || hasMatchInChannel || hasMatchInId;
+    });
 
   return (
     <>
@@ -132,7 +219,7 @@ export default function ConversationsPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={[{ value: "all", label: "All" }, { value: "open", label: "Open" }, { value: "closed", label: "Closed" }]} />
-            <FilterSelect label="Channel" value={channelFilter} onChange={setChannelFilter} options={[{ value: "all", label: "All" }, { value: "ai", label: "AI" }, { value: "email", label: "Email" }, { value: "whatsapp", label: "WhatsApp" }, { value: "slack", label: "Slack" }]} />
+            <FilterSelect label="Channel" value={channelFilter} onChange={setChannelFilter} options={[{ value: "all", label: "All" }, { value: "ai", label: "AI" }, { value: "email", label: "Email" }, { value: "whatsapp", label: "Slack" }]} />
           </div>
           <button onClick={startNewConversation} style={{ padding: "7px 16px", borderRadius: "var(--radius-md)", border: "1px solid var(--accent)", background: "var(--accent)", color: "#fff", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
             + New Conversation
@@ -156,6 +243,25 @@ export default function ConversationsPage() {
               <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>Recent ({filtered.length})</span>
               <button onClick={loadConversations} style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "12px", cursor: "pointer" }}>↻ Refresh</button>
             </div>
+            <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--border-default)" }}>
+              <input
+                type="text"
+                placeholder="Search history..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "6px 10px",
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border-default)",
+                  background: "var(--bg-surface)",
+                  color: "var(--text-primary)",
+                  fontSize: "12px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
 
             <div style={{ flex: 1, overflowY: "auto", padding: "8px" }}>
               {loadingConversations ? (
@@ -168,14 +274,68 @@ export default function ConversationsPage() {
               ) : (
                 filtered.map((conv) => {
                   const isActive = activeConversation?.id === conv.id;
-                  const lastMsg = conv.messages?.[conv.messages.length - 1]?.content || "Empty";
+                  const isHovered = hoveredConversation === conv.id;
+                  const isDeleting = deletingId === conv.id;
+                  const questionTitle = conv.title || formatConversationQuestion(conv);
                   return (
-                    <div key={conv.id} onClick={() => setActiveConversation(conv)} style={{ padding: "12px 14px", borderRadius: "var(--radius-md)", marginBottom: "6px", cursor: "pointer", background: isActive ? "var(--bg-surface-hover)" : "transparent", border: isActive ? "1px solid var(--border-active)" : "1px solid transparent", transition: "all 0.15s ease" }}>
+                    <div
+                      key={conv.id}
+                      onClick={() => selectConversation(conv)}
+                      onMouseEnter={() => setHoveredConversation(conv.id)}
+                      onMouseLeave={() => setHoveredConversation(null)}
+                      style={{
+                        padding: "12px 14px",
+                        borderRadius: "var(--radius-md)",
+                        marginBottom: "6px",
+                        cursor: "pointer",
+                        background: isActive ? "var(--bg-surface-hover)" : isHovered ? "rgba(255,255,255,0.03)" : "transparent",
+                        border: isActive ? "1px solid var(--border-active)" : "1px solid transparent",
+                        transition: "all 0.15s ease",
+                        position: "relative",
+                        opacity: isDeleting ? 0.5 : 1,
+                      }}
+                    >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
                         <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 6px", borderRadius: "var(--radius-sm)", background: "var(--accent-subtle)", color: "var(--accent)", textTransform: "uppercase" }}>{conv.channel || "AI"}</span>
-                        <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>{conv.messages?.length || 0} msgs</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          {isHovered && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}
+                              title="Delete conversation"
+                              aria-label="Delete conversation"
+                              style={{
+                                background: "var(--red-subtle)",
+                                border: "1px solid transparent",
+                                borderRadius: "var(--radius-sm)",
+                                color: "var(--red)",
+                                width: "22px",
+                                height: "22px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                transition: "all 0.15s ease",
+                                padding: 0,
+                              }}
+                              onMouseEnter={(e) => {
+                                (e.currentTarget as HTMLElement).style.background = "var(--red)";
+                                (e.currentTarget as HTMLElement).style.color = "#fff";
+                              }}
+                              onMouseLeave={(e) => {
+                                (e.currentTarget as HTMLElement).style.background = "var(--red-subtle)";
+                                (e.currentTarget as HTMLElement).style.color = "var(--red)";
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              </svg>
+                            </button>
+                          )}
+                          <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>{conv.messages?.length || 0} msgs</span>
+                        </div>
                       </div>
-                      <p style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "4px" }}>{lastMsg}</p>
+                      <p title={questionTitle} style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "4px" }}>{questionTitle}</p>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)" }}>
                         <span style={{ color: conv.status.toLowerCase() === "open" ? "var(--green)" : "var(--text-muted)" }}>● {conv.status}</span>
                         <span>{conv.updatedAt ? new Date(conv.updatedAt).toLocaleDateString([], { month: "short", day: "numeric" }) : ""}</span>
@@ -192,7 +352,7 @@ export default function ConversationsPage() {
             {/* Chat header */}
             <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h2 style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>{activeConversation?.id ? `Conversation #${activeConversation.id.slice(0, 8)}` : "New AI Chat"}</h2>
+                <h2 style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>{activeConversation ? (activeConversation.title || formatConversationQuestion(activeConversation)) : "New AI Chat"}</h2>
                 <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Autozip AI Business Assistant</span>
               </div>
               {activeConversation?.status && (
@@ -201,7 +361,8 @@ export default function ConversationsPage() {
             </div>
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div ref={messagesContainerRef} style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div ref={messagesTopRef} />
               {!activeConversation || activeConversation.messages.length === 0 ? (
                 <div style={{ margin: "auto", maxWidth: "460px", textAlign: "center", padding: "20px" }}>
                   <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "var(--accent-subtle)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", fontSize: "20px" }}>⚡</div>

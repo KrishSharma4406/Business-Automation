@@ -8,6 +8,72 @@ import { getBusinessForUser } from "@/src/lib/workspace";
 import { CreateLeadSchema } from "@/src/lib/validations/lead";
 import { db } from "@/src/prisma/db";
 
+export async function GET() {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const business = await getBusinessForUser(session.user.id);
+
+    if (!business) {
+      return NextResponse.json({
+        success: true,
+        leads: [],
+      });
+    }
+
+    const leads = await db.orm.public.Lead
+      .where({
+        businessId: business.id,
+      })
+      .orderBy((lead) => lead.createdAt.desc())
+      .select(
+        "id",
+        "businessId",
+        "name",
+        "email",
+        "phone",
+        "company",
+        "message",
+        "source",
+        "status",
+        "priority",
+        "aiScore",
+        "aiSummary",
+        "aiResponse",
+        "createdAt"
+      )
+      .all();
+
+    return NextResponse.json({
+      success: true,
+      leads,
+    });
+  } catch (error) {
+    console.error("Failed to fetch leads:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to fetch leads",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const session = await auth();

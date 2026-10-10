@@ -10,7 +10,7 @@ type AutomationInput = {
   trigger: AutomationTrigger;
   action: AutomationAction;
   config?: AutomationConfig;
-  data: any;
+  data: Record<string, any>;
 };
 
 export async function executeAutomation(
@@ -52,34 +52,51 @@ export async function executeAutomation(
       };
     }
 
-    case "generate_response":
+    case "generate_response": {
+      const result = await qualifyLead({
+        name: input.data.name,
+        email: input.data.email,
+        company: input.data.company,
+        message: input.data.message,
+      });
+
       return {
         success: true,
-        message: "Response generation queued.",
+        action: input.action,
+        response: result.response,
       };
+    }
 
     case "send_email":
       return {
-        success: true,
-        message: "Email sending queued.",
+        success: false,
+        action: input.action,
+        message:
+          "Email provider is not configured. No email was sent.",
       };
 
     case "send_whatsapp":
       return {
-        success: true,
-        message: "WhatsApp message queued.",
+        success: false,
+        action: input.action,
+        message:
+          "WhatsApp provider is not configured. No message was sent.",
       };
 
     case "notify_owner":
       return {
-        success: true,
-        message: "Owner notification queued.",
+        success: false,
+        action: input.action,
+        message:
+          "Owner notification delivery is not configured.",
       };
 
     case "create_task":
       return {
-        success: true,
-        message: "Task creation queued.",
+        success: false,
+        action: input.action,
+        message:
+          "Task persistence is not implemented yet. No task was created.",
       };
 
     default:

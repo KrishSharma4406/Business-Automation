@@ -1,19 +1,58 @@
 "use client";
 
 import TopBar from "@/src/components/top-bar";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+
+type Lead = {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  message?: string | null;
+  source?: string | null;
+  status: string;
+  priority: string;
+  aiScore?: number | null;
+  aiSummary?: string | null;
+  aiResponse?: string | null;
+  createdAt: string;
+};
 
 export default function LeadsPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(true);
+  const [sortBy, setSortBy] = useState<"date" | "score" | "priority">("date");
+
+  useEffect(() => {
+    loadLeads();
+  }, []);
+
+  async function loadLeads() {
+    try {
+      setLoadingLeads(true);
+      const res = await fetch("/api/leads");
+      if (res.ok) {
+        const data = await res.json();
+        setLeads(data.leads || []);
+      }
+    } catch (err) {
+      console.error("Failed to load leads:", err);
+    } finally {
+      setLoadingLeads(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setResult(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const body = {
       name: formData.get("name"),
       email: formData.get("email"),
@@ -33,7 +72,8 @@ export default function LeadsPage() {
       const data = await response.json();
       setResult(data);
       if (response.ok) {
-        event.currentTarget.reset();
+        form.reset();
+        await loadLeads();
       }
     } catch (error) {
       console.error(error);
@@ -42,6 +82,17 @@ export default function LeadsPage() {
       setLoading(false);
     }
   }
+
+  const sortedLeads = [...leads].sort((a, b) => {
+    if (sortBy === "score") {
+      return (b.aiScore ?? 0) - (a.aiScore ?? 0);
+    }
+    if (sortBy === "priority") {
+      const pMap: Record<string, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
+      return (pMap[b.priority.toLowerCase()] || 0) - (pMap[a.priority.toLowerCase()] || 0);
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return (
     <>
@@ -60,6 +111,8 @@ export default function LeadsPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Sort by:</span>
             <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
               style={{
                 padding: "4px 8px",
                 borderRadius: "var(--radius-sm)",
@@ -74,6 +127,9 @@ export default function LeadsPage() {
               <option value="score">AI Score</option>
               <option value="priority">Priority</option>
             </select>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)", marginLeft: "8px" }}>
+              ({leads.length} {leads.length === 1 ? "lead" : "leads"})
+            </span>
           </div>
 
           <button
@@ -86,9 +142,10 @@ export default function LeadsPage() {
               color: "#fff",
               fontSize: "12px",
               fontWeight: 600,
+              cursor: "pointer",
             }}
           >
-            + New Lead
+            {showForm ? "Cancel" : "+ New Lead"}
           </button>
         </div>
 
@@ -124,6 +181,7 @@ export default function LeadsPage() {
                   background: "transparent",
                   color: "var(--text-muted)",
                   fontSize: "12px",
+                  cursor: "pointer",
                 }}
               >
                 Close
@@ -148,12 +206,12 @@ export default function LeadsPage() {
                     marginBottom: "6px",
                   }}
                 >
-                  Requirement
+                  Requirement / Inquiring Message
                 </label>
                 <textarea
                   name="message"
                   rows={4}
-                  placeholder="Tell us what you need..."
+                  placeholder="Need AI business automation setup for customer support with a budget of $5,000..."
                   style={{
                     width: "100%",
                     padding: "10px 12px",
@@ -183,7 +241,7 @@ export default function LeadsPage() {
                   cursor: loading ? "not-allowed" : "pointer",
                 }}
               >
-                {loading ? "AI is analyzing..." : "Create & Analyze Lead"}
+                {loading ? "AI is analyzing & qualifying..." : "Create & Analyze Lead"}
               </button>
             </form>
           </div>
@@ -207,13 +265,13 @@ export default function LeadsPage() {
               }}
             >
               <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
-                AI Qualification
+                AI Qualification Result
               </span>
             </div>
 
             <div style={{ padding: "20px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "20px" }}>
-                <MiniCard label="Score" value={result.lead.aiScore} />
+                <MiniCard label="Score" value={`${result.lead.aiScore ?? 0}/100`} />
                 <MiniCard label="Priority" value={result.lead.priority} />
                 <MiniCard label="Source" value={result.lead.source} />
               </div>
@@ -255,6 +313,7 @@ export default function LeadsPage() {
             background: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
             borderRadius: "var(--radius-lg)",
+            overflow: "hidden",
           }}
         >
           {/* Table Header */}
@@ -279,15 +338,89 @@ export default function LeadsPage() {
             <span>Created</span>
           </div>
 
-          {/* Empty state */}
-          <div style={{ padding: "40px 20px", textAlign: "center" }}>
-            <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-              No leads yet.
-            </p>
-            <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px" }}>
-              Create your first lead to let AI qualify it automatically.
-            </p>
-          </div>
+          {/* Table Rows or Loading / Empty */}
+          {loadingLeads ? (
+            <div style={{ padding: "40px 20px", textAlign: "center" }}>
+              <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>Loading leads...</p>
+            </div>
+          ) : sortedLeads.length === 0 ? (
+            <div style={{ padding: "40px 20px", textAlign: "center" }}>
+              <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                No leads yet.
+              </p>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px" }}>
+                Create your first lead to let AI qualify it automatically.
+              </p>
+            </div>
+          ) : (
+            sortedLeads.map((lead) => {
+              const priority = (lead.priority || "low").toLowerCase();
+              const priorityColors: Record<string, { bg: string; color: string }> = {
+                urgent: { bg: "var(--red-subtle)", color: "var(--red)" },
+                high: { bg: "var(--amber-subtle)", color: "var(--amber)" },
+                medium: { bg: "var(--accent-subtle)", color: "var(--accent)" },
+                low: { bg: "var(--bg-surface-hover)", color: "var(--text-muted)" },
+              };
+              const badge = priorityColors[priority] || priorityColors.low;
+
+              return (
+                <div
+                  key={lead.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr",
+                    gap: "12px",
+                    padding: "14px 20px",
+                    borderBottom: "1px solid var(--border-default)",
+                    fontSize: "13px",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{lead.name}</span>
+                    {lead.email && (
+                      <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>{lead.email}</p>
+                    )}
+                  </div>
+                  <span style={{ color: "var(--text-secondary)" }}>{lead.company || "—"}</span>
+                  <div>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        color:
+                          (lead.aiScore ?? 0) >= 70
+                            ? "var(--green)"
+                            : (lead.aiScore ?? 0) >= 40
+                            ? "var(--amber)"
+                            : "var(--text-muted)",
+                      }}
+                    >
+                      {lead.aiScore ?? "—"}
+                    </span>
+                    <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>/100</span>
+                  </div>
+                  <div>
+                    <span
+                      style={{
+                        padding: "3px 8px",
+                        borderRadius: "var(--radius-sm)",
+                        background: badge.bg,
+                        color: badge.color,
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {lead.priority}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                    {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString([], { month: "short", day: "numeric" }) : "—"}
+                  </span>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </>

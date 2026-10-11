@@ -24,15 +24,15 @@ type AutomationStats = {
   executions: number;
 };
 
-const TRIGGER_META: Record<string, { label: string; icon: string }> = {
-  new_lead: { label: "When a new lead arrives"},
-  new_customer: { label: "When a new customer is created"},
-  new_message: { label: "When a new message arrives"},
-  lead_qualified: { label: "When a lead is qualified"},
-  conversation_received: { label: "When a conversation is received"},
+const TRIGGER_META: Record<string, { label: string; icon?: string }> = {
+  new_lead: { label: "When a new lead arrives" },
+  new_customer: { label: "When a new customer is created" },
+  new_message: { label: "When a new message arrives" },
+  lead_qualified: { label: "When a lead is qualified" },
+  conversation_received: { label: "When a conversation is received" },
 };
 
-const ACTION_META: Record<string, { label: string; icon: string }> = {
+const ACTION_META: Record<string, { label: string; icon?: string }> = {
   ai_qualify_lead: { label: "Qualify lead with AI" },
   generate_response: { label: "Generate an AI response" },
   send_email: { label: "Send email" },
@@ -61,7 +61,7 @@ export default function AutomationPage() {
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadAutomations = useCallback(async () => {
@@ -99,72 +99,64 @@ export default function AutomationPage() {
     loadAutomations();
   }, [loadAutomations, refreshKey]);
 
-  async function handleToggleStatus(automation: Automation) {
+  async function toggleAutomation(automation: Automation) {
+    setUpdatingId(automation.id);
+
     try {
-      setTogglingId(automation.id);
-      const res = await fetch("/api/automations", {
+      const response = await fetch(`/api/automations/${automation.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          id: automation.id,
           enabled: !automation.enabled,
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to update status");
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to update automation.");
       }
 
-      setAutomations((prev) =>
-        prev.map((item) =>
-          item.id === automation.id
-            ? { ...item, enabled: !item.enabled }
-            : item
-        )
-      );
-      setStats((prev) => {
-        const nextActive = automation.enabled
-          ? prev.active - 1
-          : prev.active + 1;
-        const nextPaused = automation.enabled
-          ? prev.paused + 1
-          : prev.paused - 1;
-        return {
-          ...prev,
-          active: Math.max(0, nextActive),
-          paused: Math.max(0, nextPaused),
-        };
-      });
-    } catch (err) {
-      alert(
-        err instanceof Error ? err.message : "Failed to update automation status"
+      setRefreshKey((current) => current + 1);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update automation."
       );
     } finally {
-      setTogglingId(null);
+      setUpdatingId(null);
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) {
-      return;
-    }
+  async function deleteAutomation(automation: Automation) {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${automation.name}"?`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(automation.id);
 
     try {
-      setDeletingId(id);
-      const res = await fetch(`/api/automations?id=${encodeURIComponent(id)}`, {
+      const response = await fetch(`/api/automations/${automation.id}`, {
         method: "DELETE",
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to delete automation");
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to delete automation.");
       }
 
-      setAutomations((prev) => prev.filter((item) => item.id !== id));
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete automation");
+      setRefreshKey((current) => current + 1);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete automation."
+      );
     } finally {
       setDeletingId(null);
     }
@@ -304,7 +296,6 @@ export default function AutomationPage() {
                     pointerEvents: "none",
                   }}
                 >
-                  🔍
                 </span>
               </div>
 
@@ -580,7 +571,7 @@ export default function AutomationPage() {
                   const actionInfo = ACTION_META[item.action] || {
                     label: item.action,
                   };
-                  const isToggling = togglingId === item.id;
+                  const isUpdating = updatingId === item.id;
                   const isDeleting = deletingId === item.id;
 
                   const formattedDate = new Date(item.createdAt).toLocaleDateString(
@@ -717,9 +708,11 @@ export default function AutomationPage() {
                               gap: "6px",
                             }}
                           >
-                            <span style={{ fontSize: "13px" }}>
-                              {triggerInfo.icon}
-                            </span>
+                            {triggerInfo.icon && (
+                              <span style={{ fontSize: "13px" }}>
+                                {triggerInfo.icon}
+                              </span>
+                            )}
                             <span
                               style={{
                                 fontSize: "11px",
@@ -762,9 +755,11 @@ export default function AutomationPage() {
                               gap: "6px",
                             }}
                           >
-                            <span style={{ fontSize: "13px" }}>
-                              {actionInfo.icon}
-                            </span>
+                            {actionInfo.icon && (
+                              <span style={{ fontSize: "13px" }}>
+                                {actionInfo.icon}
+                              </span>
+                            )}
                             <span
                               style={{
                                 fontSize: "11px",
@@ -801,8 +796,8 @@ export default function AutomationPage() {
                         {/* Toggle active / paused button */}
                         <button
                           type="button"
-                          onClick={() => handleToggleStatus(item)}
-                          disabled={isToggling}
+                          onClick={() => toggleAutomation(item)}
+                          disabled={updatingId === item.id}
                           title={item.enabled ? "Pause automation" : "Activate automation"}
                           style={{
                             padding: "6px 12px",
@@ -818,12 +813,12 @@ export default function AutomationPage() {
                               : "var(--green)",
                             fontSize: "12px",
                             fontWeight: 500,
-                            cursor: isToggling ? "wait" : "pointer",
-                            opacity: isToggling ? 0.6 : 1,
+                            cursor: updatingId === item.id ? "wait" : "pointer",
+                            opacity: updatingId === item.id ? 0.6 : 1,
                             transition: "all 0.15s ease",
                           }}
                         >
-                          {isToggling
+                          {updatingId === item.id
                             ? "Updating..."
                             : item.enabled
                             ? "Pause"
@@ -833,8 +828,8 @@ export default function AutomationPage() {
                         {/* Delete button */}
                         <button
                           type="button"
-                          onClick={() => handleDelete(item.id, item.name)}
-                          disabled={isDeleting}
+                          onClick={() => deleteAutomation(item)}
+                          disabled={deletingId === item.id}
                           title="Delete automation"
                           style={{
                             padding: "6px 10px",
@@ -843,8 +838,8 @@ export default function AutomationPage() {
                             background: "transparent",
                             color: "var(--text-muted)",
                             fontSize: "12px",
-                            cursor: isDeleting ? "wait" : "pointer",
-                            opacity: isDeleting ? 0.5 : 1,
+                            cursor: deletingId === item.id ? "wait" : "pointer",
+                            opacity: deletingId === item.id ? 0.5 : 1,
                             transition: "all 0.15s ease",
                           }}
                           onMouseEnter={(e) => {
@@ -859,7 +854,7 @@ export default function AutomationPage() {
                             e.currentTarget.style.background = "transparent";
                           }}
                         >
-                          {isDeleting ? "..." : "Delete"}
+                          {deletingId === item.id ? "..." : "Delete"}
                         </button>
                       </div>
                     </div>

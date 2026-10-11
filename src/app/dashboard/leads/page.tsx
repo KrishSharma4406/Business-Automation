@@ -26,6 +26,7 @@ export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loadingLeads, setLoadingLeads] = useState(true);
   const [sortBy, setSortBy] = useState<"date" | "score" | "priority">("date");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadLeads();
@@ -43,6 +44,30 @@ export default function LeadsPage() {
       console.error("Failed to load leads:", err);
     } finally {
       setLoadingLeads(false);
+    }
+  }
+
+  async function handleDeleteLead(lead: Lead) {
+    if (!window.confirm(`Are you sure you want to delete lead "${lead.name}"?`)) {
+      return;
+    }
+
+    setDeletingId(lead.id);
+    try {
+      const res = await fetch(`/api/leads/${lead.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete lead");
+      }
+
+      setLeads((prev) => prev.filter((item) => item.id !== lead.id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete lead");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -320,7 +345,7 @@ export default function LeadsPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr",
+              gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr 70px",
               gap: "12px",
               padding: "12px 20px",
               borderBottom: "1px solid var(--border-default)",
@@ -336,6 +361,7 @@ export default function LeadsPage() {
             <span>Score</span>
             <span>Priority</span>
             <span>Created</span>
+            <span style={{ textAlign: "right" }}>Action</span>
           </div>
 
           {/* Table Rows or Loading / Empty */}
@@ -368,7 +394,7 @@ export default function LeadsPage() {
                   key={lead.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr",
+                    gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr 70px",
                     gap: "12px",
                     padding: "14px 20px",
                     borderBottom: "1px solid var(--border-default)",
@@ -417,6 +443,37 @@ export default function LeadsPage() {
                   <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
                     {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString([], { month: "short", day: "numeric" }) : "—"}
                   </span>
+                  <div style={{ textAlign: "right" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteLead(lead)}
+                      disabled={deletingId === lead.id}
+                      title="Delete lead"
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--border-default)",
+                        background: "transparent",
+                        color: "var(--text-muted)",
+                        fontSize: "11px",
+                        cursor: deletingId === lead.id ? "wait" : "pointer",
+                        opacity: deletingId === lead.id ? 0.5 : 1,
+                        transition: "all 0.15s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "var(--red)";
+                        e.currentTarget.style.borderColor = "var(--red)";
+                        e.currentTarget.style.background = "var(--red-subtle)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--text-muted)";
+                        e.currentTarget.style.borderColor = "var(--border-default)";
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      {deletingId === lead.id ? "..." : "Delete"}
+                    </button>
+                  </div>
                 </div>
               );
             })

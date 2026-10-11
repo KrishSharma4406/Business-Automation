@@ -15,10 +15,17 @@ export async function getWorkspaceForUser(
 export async function getBusinessForUser(
   userId: string
 ) {
-  return await db.orm.public.Business
+  const business = await db.orm.public.Business
     .where({
       ownerId: userId,
     })
+    .select("id", "name", "slug")
+    .orderBy((business) => business.createdAt.asc())
+    .first();
+
+  if (business) return business;
+
+  return await db.orm.public.Business
     .select("id", "name", "slug")
     .orderBy((business) => business.createdAt.asc())
     .first();

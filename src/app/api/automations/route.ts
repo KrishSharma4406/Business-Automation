@@ -53,6 +53,7 @@ export async function GET() {
 
         const automations = await db.orm.public.Automation
             .where({ businessId: business.id })
+            .orderBy((item) => item.createdAt.desc())
             .select(
                 "id",
                 "businessId",
@@ -195,6 +196,181 @@ export async function POST(request: Request) {
 
         return NextResponse.json(
             { success: false, error: "Failed to create automation" },
+            { status: 500 }
+        );
+    }
+}
+
+/**
+ * PATCH /api/automations
+ * Updates an automation (e.g. toggle enabled, update details).
+ */
+export async function PATCH(request: Request) {
+    try {
+        const session = await auth();
+        const userId = session?.user?.id;
+
+        if (!userId) {
+            return NextResponse.json(
+                { success: false, error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const business = await getBusinessForUser(userId);
+
+        if (!business) {
+            return NextResponse.json(
+                { success: false, error: "Business not found" },
+                { status: 404 }
+            );
+        }
+
+        let body: Record<string, unknown>;
+        try {
+            body = await request.json();
+        } catch {
+            return NextResponse.json(
+                { success: false, error: "Invalid JSON body" },
+                { status: 400 }
+            );
+        }
+
+        const id = typeof body.id === "string" ? body.id : null;
+        if (!id) {
+            return NextResponse.json(
+                { success: false, error: "Automation ID is required" },
+                { status: 400 }
+            );
+        }
+
+        const existing = await db.orm.public.Automation
+            .where({ id, businessId: business.id })
+            .select("id")
+            .first();
+
+        if (!existing) {
+            return NextResponse.json(
+                { success: false, error: "Automation not found" },
+                { status: 404 }
+            );
+        }
+
+        const updateData: Record<string, unknown> = {};
+
+        if (typeof body.enabled === "boolean") {
+            updateData.enabled = body.enabled;
+        }
+
+        if (typeof body.name === "string" && body.name.trim()) {
+            updateData.name = body.name.trim();
+        }
+
+        if (typeof body.description === "string") {
+            updateData.description = body.description.trim() || null;
+        }
+
+        if (
+            typeof body.trigger === "string" &&
+            VALID_TRIGGERS.includes(body.trigger as AutomationTrigger)
+        ) {
+            updateData.trigger = body.trigger;
+        }
+
+        if (
+            typeof body.action === "string" &&
+            VALID_ACTIONS.includes(body.action as AutomationAction)
+        ) {
+            updateData.action = body.action;
+        }
+
+        await db.orm.public.Automation
+            .where({ id })
+            .update(updateData as any);
+
+        return NextResponse.json({
+            success: true,
+            message: "Automation updated successfully",
+        });
+    } catch (error) {
+        console.error("PATCH /api/automations error:", error);
+        return NextResponse.json(
+            { success: false, error: "Failed to update automation" },
+            { status: 500 }
+        );
+    }
+}
+
+/**
+ * DELETE /api/automations
+ * Deletes an automation belonging to the user's business.
+ */
+export async function DELETE(request: Request) {
+    try {
+        const session = await auth();
+        const userId = session?.user?.id;
+
+        if (!userId) {
+            return NextResponse.json(
+                { success: false, error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const business = await getBusinessForUser(userId);
+
+        if (!business) {
+            return NextResponse.json(
+                { success: false, error: "Business not found" },
+                { status: 404 }
+            );
+        }
+
+        const { searchParams } = new URL(request.url);
+        let id = searchParams.get("id");
+
+        if (!id) {
+            try {
+                const body = await request.json();
+                if (typeof body.id === "string") {
+                    id = body.id;
+                }
+            } catch {
+                // Ignore body parse errors if id was expected in searchParams
+            }
+        }
+
+        if (!id) {
+            return NextResponse.json(
+                { success: false, error: "Automation ID is required" },
+                { status: 400 }
+            );
+        }
+
+        const existing = await db.orm.public.Automation
+            .where({ id, businessId: business.id })
+            .select("id")
+            .first();
+
+        if (!existing) {
+            return NextResponse.json(
+                { success: false, error: "Automation not found" },
+                { status: 404 }
+            );
+        }
+
+        await db.orm.public.Automation
+            .where({ id })
+            .delete();
+
+        return NextResponse.json({
+            success: true,
+            message: "Automation deleted successfully",
+        });
+    } catch (error) {
+        console.error("DELETE /api/automations error:", error);
+        return NextResponse.json(
+            { success: false, error: "Failed to delete automation" },
             { status: 500 }
         );
     }

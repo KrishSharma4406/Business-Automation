@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'a599e7bd9ded66ebfdd1fb3489704d72a4e2eec7a8bb1e96a18cb284d45f4166'>;
+  StorageHashBase<'29c03f8388cb6c923af3d129531292d8ece8ff87229e26ff29fb06fe5d6969e6'>;
 export type ExecutionHash =
-  ExecutionHashBase<'c7491472d5529396fc0dcfde7d2cd36090176870a594e7fda219f00e96314279'>;
+  ExecutionHashBase<'c1a3299906c3efa00882167c5010bd35c750fdfe22bb8cf09fd9c7cc02ef53a8'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -262,6 +262,19 @@ export type FieldOutputTypes = {
       readonly trigger: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
+    readonly AutomationExecution: {
+      readonly automationId: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly businessId: CodecTypes['pg/uuid@1']['output'];
+      readonly completedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly durationMs: CodecTypes['pg/int4@1']['output'] | null;
+      readonly error: CodecTypes['pg/text@1']['output'] | null;
+      readonly id: CodecTypes['pg/uuid@1']['output'];
+      readonly input: CodecTypes['pg/json@1']['output'] | null;
+      readonly output: CodecTypes['pg/json@1']['output'] | null;
+      readonly startedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly trigger: CodecTypes['pg/text@1']['output'];
+    };
     readonly Business: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
@@ -360,6 +373,19 @@ export type FieldInputTypes = {
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly trigger: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
+    readonly AutomationExecution: {
+      readonly automationId: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly businessId: CodecTypes['pg/uuid@1']['input'];
+      readonly completedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly durationMs: CodecTypes['pg/int4@1']['input'] | null;
+      readonly error: CodecTypes['pg/text@1']['input'] | null;
+      readonly id: CodecTypes['pg/uuid@1']['input'];
+      readonly input: CodecTypes['pg/json@1']['input'] | null;
+      readonly output: CodecTypes['pg/json@1']['input'] | null;
+      readonly startedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly trigger: CodecTypes['pg/text@1']['input'];
     };
     readonly Business: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -460,6 +486,19 @@ export type StorageColumnTypes = {
       readonly trigger: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
+    readonly AutomationExecution: {
+      readonly automationId: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly businessId: CodecTypes['pg/uuid@1']['output'];
+      readonly completedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly durationMs: CodecTypes['pg/int4@1']['output'] | null;
+      readonly error: CodecTypes['pg/text@1']['output'] | null;
+      readonly id: CodecTypes['pg/uuid@1']['output'];
+      readonly input: CodecTypes['pg/json@1']['output'] | null;
+      readonly output: CodecTypes['pg/json@1']['output'] | null;
+      readonly startedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly trigger: CodecTypes['pg/text@1']['output'];
+    };
     readonly Business: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
@@ -558,6 +597,19 @@ export type StorageColumnInputTypes = {
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly trigger: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
+    readonly AutomationExecution: {
+      readonly automationId: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly businessId: CodecTypes['pg/uuid@1']['input'];
+      readonly completedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly durationMs: CodecTypes['pg/int4@1']['input'] | null;
+      readonly error: CodecTypes['pg/text@1']['input'] | null;
+      readonly id: CodecTypes['pg/uuid@1']['input'];
+      readonly input: CodecTypes['pg/json@1']['input'] | null;
+      readonly output: CodecTypes['pg/json@1']['input'] | null;
+      readonly startedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly trigger: CodecTypes['pg/text@1']['input'];
     };
     readonly Business: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -658,7 +710,24 @@ export namespace Models {
     trigger: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     business: public_Business;
-    readonly [RelationKeys]?: 'business';
+    executions: public_AutomationExecution[];
+    readonly [RelationKeys]?: 'business' | 'executions';
+  };
+  export type public_AutomationExecution = {
+    automationId: CodecTypes['pg/uuid@1']['output'] | null;
+    businessId: CodecTypes['pg/uuid@1']['output'];
+    completedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    durationMs: CodecTypes['pg/int4@1']['output'] | null;
+    error: CodecTypes['pg/text@1']['output'] | null;
+    id: CodecTypes['pg/uuid@1']['output'];
+    input: CodecTypes['pg/json@1']['output'] | null;
+    output: CodecTypes['pg/json@1']['output'] | null;
+    startedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    status: CodecTypes['pg/text@1']['output'];
+    trigger: CodecTypes['pg/text@1']['output'];
+    automation: public_Automation | null;
+    business: public_Business;
+    readonly [RelationKeys]?: 'automation' | 'business';
   };
   export type public_Business = {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -670,12 +739,14 @@ export namespace Models {
     slug: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     website: CodecTypes['pg/text@1']['output'] | null;
+    automationExecutions: public_AutomationExecution[];
     automations: public_Automation[];
     conversations: public_Conversation[];
     customers: public_Customer[];
     leads: public_Lead[];
     owner: public_User;
-    readonly [RelationKeys]?: 'automations' | 'conversations' | 'customers' | 'leads' | 'owner';
+    readonly [RelationKeys]?:
+      'automationExecutions' | 'automations' | 'conversations' | 'customers' | 'leads' | 'owner';
   };
   export type public_Conversation = {
     businessId: CodecTypes['pg/uuid@1']['output'];
@@ -773,6 +844,7 @@ export namespace Models {
 export declare const models: {
   public: {
     Automation: Models.public_Automation;
+    AutomationExecution: Models.public_AutomationExecution;
     Business: Models.public_Business;
     Conversation: Models.public_Conversation;
     Customer: Models.public_Customer;
@@ -880,6 +952,130 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'Business';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly AutomationExecution: {
+              columns: {
+                readonly automationId: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
+                };
+                readonly businessId: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                };
+                readonly completedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly durationMs: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly error: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                };
+                readonly input: {
+                  readonly nativeType: 'json';
+                  readonly codecId: 'pg/json@1';
+                  readonly nullable: true;
+                };
+                readonly output: {
+                  readonly nativeType: 'json';
+                  readonly codecId: 'pg/json@1';
+                  readonly nullable: true;
+                };
+                readonly startedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly status: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'running'>;
+                  };
+                };
+                readonly trigger: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'AutomationExecution_automationId_idx_4a3c63da';
+                  readonly prefix: 'AutomationExecution_automationId_idx';
+                  readonly columns: readonly ['automationId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'AutomationExecution_automationId_startedAt_idx_d2dd5798';
+                  readonly prefix: 'AutomationExecution_automationId_startedAt_idx';
+                  readonly columns: readonly ['automationId', 'startedAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'AutomationExecution_businessId_idx_ae0ed511';
+                  readonly prefix: 'AutomationExecution_businessId_idx';
+                  readonly columns: readonly ['businessId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'AutomationExecution_businessId_startedAt_idx_84083d08';
+                  readonly prefix: 'AutomationExecution_businessId_startedAt_idx';
+                  readonly columns: readonly ['businessId', 'startedAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'AutomationExecution_status_idx_e98638ab';
+                  readonly prefix: 'AutomationExecution_status_idx';
+                  readonly columns: readonly ['status'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'AutomationExecution';
+                    readonly columns: readonly ['businessId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Business';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'AutomationExecution';
+                    readonly columns: readonly ['automationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Automation';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1508,6 +1704,10 @@ type ContractBase = Omit<
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'Automation';
     };
+    readonly AutomationExecution: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'AutomationExecution';
+    };
     readonly Business: { readonly namespace: 'public' & NamespaceId; readonly model: 'Business' };
     readonly Conversation: {
       readonly namespace: 'public' & NamespaceId;
@@ -1592,6 +1792,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly executions: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'AutomationExecution';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['automationId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'Automation';
@@ -1607,6 +1818,103 @@ type ContractBase = Omit<
                 readonly name: { readonly column: 'name' };
                 readonly trigger: { readonly column: 'trigger' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly AutomationExecution: {
+            readonly fields: {
+              readonly automationId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly businessId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly completedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly durationMs: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly error: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly input: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/json@1' };
+              };
+              readonly output: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/json@1' };
+              };
+              readonly startedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly trigger: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly automation: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Automation';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['automationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly business: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Business';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['businessId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'AutomationExecution';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly automationId: { readonly column: 'automationId' };
+                readonly businessId: { readonly column: 'businessId' };
+                readonly completedAt: { readonly column: 'completedAt' };
+                readonly durationMs: { readonly column: 'durationMs' };
+                readonly error: { readonly column: 'error' };
+                readonly id: { readonly column: 'id' };
+                readonly input: { readonly column: 'input' };
+                readonly output: { readonly column: 'output' };
+                readonly startedAt: { readonly column: 'startedAt' };
+                readonly status: { readonly column: 'status' };
+                readonly trigger: { readonly column: 'trigger' };
               };
             };
           };
@@ -1656,6 +1964,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly automationExecutions: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'AutomationExecution';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['businessId'];
+                };
+              };
               readonly automations: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -2348,6 +2667,14 @@ type ContractBase = Omit<
             readonly column: 'updatedAt';
             readonly namespace: 'public';
             readonly table: 'Automation';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'uuidv4'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly column: 'id';
+            readonly namespace: 'public';
+            readonly table: 'AutomationExecution';
           };
         },
         {

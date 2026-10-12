@@ -8,6 +8,10 @@
       "model": "Automation",
       "namespace": "public"
     },
+    "AutomationExecution": {
+      "model": "AutomationExecution",
+      "namespace": "public"
+    },
     "Business": {
       "model": "Business",
       "namespace": "public"
@@ -199,6 +203,21 @@
                   "model": "Business",
                   "namespace": "public"
                 }
+              },
+              "executions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "automationId"
+                  ]
+                },
+                "to": {
+                  "model": "AutomationExecution",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -236,6 +255,160 @@
               },
               "namespaceId": "public",
               "table": "Automation"
+            }
+          },
+          "AutomationExecution": {
+            "fields": {
+              "automationId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "businessId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "completedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "durationMs": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "error": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "input": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
+              "output": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
+              "startedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "trigger": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "automation": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "automationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Automation",
+                  "namespace": "public"
+                }
+              },
+              "business": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "businessId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Business",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "automationId": {
+                  "column": "automationId"
+                },
+                "businessId": {
+                  "column": "businessId"
+                },
+                "completedAt": {
+                  "column": "completedAt"
+                },
+                "durationMs": {
+                  "column": "durationMs"
+                },
+                "error": {
+                  "column": "error"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "input": {
+                  "column": "input"
+                },
+                "output": {
+                  "column": "output"
+                },
+                "startedAt": {
+                  "column": "startedAt"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "trigger": {
+                  "column": "trigger"
+                }
+              },
+              "namespaceId": "public",
+              "table": "AutomationExecution"
             }
           },
           "Business": {
@@ -305,6 +478,21 @@
               }
             },
             "relations": {
+              "automationExecutions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "businessId"
+                  ]
+                },
+                "to": {
+                  "model": "AutomationExecution",
+                  "namespace": "public"
+                }
+              },
               "automations": {
                 "cardinality": "1:N",
                 "on": {
@@ -1390,6 +1578,158 @@
               },
               "uniques": []
             },
+            "AutomationExecution": {
+              "columns": {
+                "automationId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
+                "businessId": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "completedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "durationMs": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "error": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "input": {
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
+                  "nullable": true
+                },
+                "output": {
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
+                  "nullable": true
+                },
+                "startedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "running"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "trigger": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "businessId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AutomationExecution"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Business"
+                  }
+                },
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "automationId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AutomationExecution"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Automation"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "automationId"
+                  ],
+                  "name": "AutomationExecution_automationId_idx_4a3c63da",
+                  "prefix": "AutomationExecution_automationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "automationId",
+                    "startedAt"
+                  ],
+                  "name": "AutomationExecution_automationId_startedAt_idx_d2dd5798",
+                  "prefix": "AutomationExecution_automationId_startedAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "businessId"
+                  ],
+                  "name": "AutomationExecution_businessId_idx_ae0ed511",
+                  "prefix": "AutomationExecution_businessId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "businessId",
+                    "startedAt"
+                  ],
+                  "name": "AutomationExecution_businessId_startedAt_idx_84083d08",
+                  "prefix": "AutomationExecution_businessId_startedAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "status"
+                  ],
+                  "name": "AutomationExecution_status_idx_e98638ab",
+                  "prefix": "AutomationExecution_status_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "Business": {
               "columns": {
                 "createdAt": {
@@ -2197,10 +2537,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a599e7bd9ded66ebfdd1fb3489704d72a4e2eec7a8bb1e96a18cb284d45f4166"
+    "storageHash": "29c03f8388cb6c923af3d129531292d8ece8ff87229e26ff29fb06fe5d6969e6"
   },
   "execution": {
-    "executionHash": "c7491472d5529396fc0dcfde7d2cd36090176870a594e7fda219f00e96314279",
+    "executionHash": "c1a3299906c3efa00882167c5010bd35c750fdfe22bb8cf09fd9c7cc02ef53a8",
     "mutations": {
       "defaults": [
         {
@@ -2227,6 +2567,17 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "Automation"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "AutomationExecution"
           }
         },
         {

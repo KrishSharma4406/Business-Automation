@@ -15,13 +15,8 @@ export async function GET() {
 
     if (!session?.user?.id) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-        },
-        {
-          status: 401,
-        }
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
@@ -35,9 +30,7 @@ export async function GET() {
     }
 
     const leads = await db.orm.public.Lead
-      .where({
-        businessId: business.id,
-      })
+      .where({ businessId: business.id })
       .orderBy((lead) => lead.createdAt.desc())
       .select(
         "id",
@@ -63,14 +56,10 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Failed to fetch leads:", error);
+
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to fetch leads",
-      },
-      {
-        status: 500,
-      }
+      { success: false, error: "Failed to fetch leads" },
+      { status: 500 }
     );
   }
 }
@@ -81,38 +70,36 @@ export async function POST(request: Request) {
 
     if (!session?.user?.id) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Unauthorized",
-        },
-        {
-          status: 401,
-        }
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
     const body = await request.json();
     const data = CreateLeadSchema.parse(body);
 
-    let businessId = data.businessId;
+    // Resolve the authenticated user's authorized business.
+    const business = await getBusinessForUser(session.user.id);
 
-    if (!businessId) {
-      const business = await getBusinessForUser(session.user.id);
-
-      if (!business) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Business not found",
-          },
-          {
-            status: 404,
-          }
-        );
-      }
-
-      businessId = business.id;
+    if (!business) {
+      return NextResponse.json(
+        { success: false, error: "Business not found" },
+        { status: 404 }
+      );
     }
+
+    // Never trust a client-supplied business ID without authorization.
+    if (data.businessId && data.businessId !== business.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "You are not authorized to create leads for this business",
+        },
+        { status: 403 }
+      );
+    }
+
+    const businessId = business.id;
 
     let aiResult: {
       priority: "low" | "medium" | "high" | "urgent";
@@ -123,7 +110,8 @@ export async function POST(request: Request) {
       priority: "medium",
       score: 50,
       summary: "Lead created",
-      response: "Thank you for reaching out! We'll get back to you shortly.",
+      response:
+        "Thank you for reaching out! We'll get back to you shortly.",
     };
 
     try {
@@ -137,6 +125,7 @@ export async function POST(request: Request) {
       console.warn("AI qualification fallback used:", qualifyErr);
     }
 
+    // Create the lead before attempting any automations.
     const lead = await db.orm.public.Lead.create({
       id: crypto.randomUUID(),
       businessId,
@@ -153,45 +142,45 @@ export async function POST(request: Request) {
       aiResponse: aiResult.response,
     });
 
-    // Trigger automations for the new lead
+    const automationData = {
+      leadId: lead.id,
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      company: lead.company,
+      message: lead.message,
+      source: lead.source,
+      priority: lead.priority,
+      aiScore: lead.aiScore,
+      aiSummary: lead.aiSummary,
+      aiResponse: lead.aiResponse,
+    };
+
     let automationResults = null;
+    let qualifiedAutomationResults = null;
+
+    // Run the new-lead trigger independently.
     try {
       automationResults = await runAutomationsForEvent({
         businessId,
         trigger: "new_lead",
-        data: {
-          leadId: lead.id,
-          name: lead.name,
-          email: lead.email,
-          phone: lead.phone,
-          company: lead.company,
-          message: lead.message,
-          source: lead.source,
-          priority: lead.priority,
-          aiScore: lead.aiScore,
-          aiSummary: lead.aiSummary,
-          aiResponse: lead.aiResponse,
-        },
+        data: automationData,
       });
+    } catch (autoErr) {
+      console.error("New-lead automation error:", autoErr);
+    }
 
-      if (lead.priority === "urgent" || lead.priority === "high") {
-        await runAutomationsForEvent({
+    // A failure above must not prevent the qualification trigger.
+    if (lead.priority === "urgent" || lead.priority === "high") {
+      try {
+        qualifiedAutomationResults = await runAutomationsForEvent({
           businessId,
           trigger: "lead_qualified",
-          data: {
-            leadId: lead.id,
-            name: lead.name,
-            email: lead.email,
-            phone: lead.phone,
-            company: lead.company,
-            message: lead.message,
-            priority: lead.priority,
-            aiScore: lead.aiScore,
-          },
+          data: automationData,
         });
+      } catch (autoErr) {
+        console.error("Lead-qualified automation error:", autoErr);
       }
-    } catch (autoErr) {
-      console.error("Automation execution error:", autoErr);
     }
 
     return NextResponse.json({
@@ -211,7 +200,10 @@ export async function POST(request: Request) {
         aiSummary: lead.aiSummary,
         aiResponse: lead.aiResponse,
       },
-      automations: automationResults,
+      automations: {
+        newLead: automationResults,
+        leadQualified: qualifiedAutomationResults,
+      },
     });
   } catch (error) {
     console.error("Failed to create lead:", error);
@@ -223,20 +215,13 @@ export async function POST(request: Request) {
           error: "Validation failed",
           details: error.issues,
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       );
     }
 
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to create lead",
-      },
-      {
-        status: 500,
-      }
+      { success: false, error: "Failed to create lead" },
+      { status: 500 }
     );
   }
 }
@@ -267,11 +252,12 @@ export async function DELETE(request: Request) {
     if (!id) {
       try {
         const body = await request.json();
+
         if (typeof body.id === "string") {
           id = body.id;
         }
       } catch {
-        // Ignore body parse errors if id is in query params
+        // Ignore body parsing errors if the ID is in the query string.
       }
     }
 
@@ -297,8 +283,12 @@ export async function DELETE(request: Request) {
       );
     }
 
+    // Keep deletion scoped to the authorized business.
     await db.orm.public.Lead
-      .where({ id })
+      .where({
+        id,
+        businessId: business.id,
+      })
       .delete();
 
     return NextResponse.json({
@@ -307,14 +297,10 @@ export async function DELETE(request: Request) {
     });
   } catch (error) {
     console.error("Failed to delete lead:", error);
+
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to delete lead",
-      },
-      {
-        status: 500,
-      }
+      { success: false, error: "Failed to delete lead" },
+      { status: 500 }
     );
   }
 }

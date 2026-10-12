@@ -60,6 +60,7 @@ model Business {
   customers     Customer[]
   conversations Conversation[]
   automations   Automation[]
+  automationExecutions AutomationExecution[]
 
   @@index([ownerId])
 }
@@ -129,6 +130,7 @@ model Automation {
   updatedAt   temporal.updatedAt()
 
   business    Business             @relation(fields:[businessId], references:[id])
+  executions AutomationExecution[]
 
   @@index([businessId])
 }
@@ -184,6 +186,30 @@ model WorkspaceMember {
   @@unique([userId, workspaceId])
   @@index([userId])
   @@index([workspaceId])
+}
+
+model AutomationExecution {
+  id           Uuid      @id @default(uuid())
+  businessId   Uuid
+  automationId Uuid?
+
+  trigger      String
+  status       String    @default("running")
+
+  input        Json?
+  output       Json?
+  error        String?
+
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  durationMs   Int?
+
+  business     Business    @relation(fields: [businessId], references: [id])
+  automation   Automation? @relation(fields: [automationId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, startedAt])
+  @@index([automationId, startedAt])
+  @@index([status])
 }
 
 enum IntegrationProvider {

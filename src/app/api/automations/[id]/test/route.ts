@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { db } from "@/src/prisma/db";
@@ -11,15 +10,18 @@ import type {
 } from "@/src/lib/automation";
 
 type RouteContext = {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 };
 
-export async function POST(
-  request: Request,
-  context: RouteContext
-) {
+/**
+ * POST /api/automations/[id]/test
+ * Executes one automation manually without changing its enabled state
+ * or writing an execution-history record.
+ */
+export async function POST(request: Request, context: RouteContext) {
   try {
-    // 1. Authenticate the user.
     const session = await auth();
     const userId = session?.user?.id;
 
@@ -30,9 +32,7 @@ export async function POST(
       );
     }
 
-    // 2. Resolve the user's authorized business.
     const business = await getBusinessForUser(userId);
-
     if (!business) {
       return NextResponse.json(
         { success: false, error: "Business not found" },
@@ -40,24 +40,11 @@ export async function POST(
       );
     }
 
-    // 3. Read the automation ID.
     const { id } = await context.params;
 
-    // 4. Find the automation within this business only.
     const automation = await db.orm.public.Automation
-      .where({
-        id,
-        businessId: business.id,
-      })
-      .select(
-        "id",
-        "businessId",
-        "name",
-        "trigger",
-        "action",
-        "config",
-        "enabled"
-      )
+      .where({ id, businessId: business.id })
+      .select("id", "businessId", "name", "trigger", "action", "config")
       .first();
 
     if (!automation) {
@@ -67,109 +54,92 @@ export async function POST(
       );
     }
 
-    // 5. Accept optional test data.
-    let body: Record<string, unknown> = {};
-
+    let body: { data?: unknown };
     try {
-      const parsed: unknown = await request.json();
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
 
+    let data: Record<string, unknown> = {
+      name: "Test Lead",
+      email: "test@example.com",
+      source: "manual_test",
+    };
+
+    if (body.data !== undefined) {
       if (
-        typeof parsed !== "object" ||
-        parsed === null ||
-        Array.isArray(parsed)
+        body.data === null ||
+        typeof body.data !== "object" ||
+        Array.isArray(body.data)
       ) {
         return NextResponse.json(
-          {
-            success: false,
-            error: "Request body must be a JSON object.",
-          },
+          { success: false, error: "The data field must be a JSON object" },
           { status: 400 }
         );
       }
-
-      body = parsed as Record<string, unknown>;
-    } catch {
-      return NextResponse.json(
-        { success: false, error: "Invalid JSON body." },
-        { status: 400 }
-      );
+      data = body.data as Record<string, unknown>;
     }
 
-    const data = body.data ?? {};
+    const startedAt = Date.now();
+    let execution: Awaited<ReturnType<typeof executeAutomation>>;
 
-    if (
-      typeof data !== "object" ||
-      data === null ||
-      Array.isArray(data)
-    ) {
+    try {
+      execution = await executeAutomation({
+        trigger: automation.trigger as AutomationTrigger,
+        action: automation.action as AutomationAction,
+        config: (automation.config ?? undefined) as
+          | AutomationConfig
+          | undefined,
+        data,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Automation execution failed";
       return NextResponse.json(
         {
           success: false,
-          error: "'data' must be a JSON object.",
+          error: message,
+          execution: {
+            success: false,
+            durationMs: Date.now() - startedAt,
+            error: message,
+          },
+          historySaved: false,
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
-    // 6. Execute only this automation.
-    // Manual tests are allowed even when the automation is disabled.
-    const startTime = Date.now();
-    const startedAt = new Date(startTime).toISOString();
-
-    const result = await executeAutomation({
-      trigger: automation.trigger as AutomationTrigger,
-      action: automation.action as AutomationAction,
-      config: (automation.config ?? undefined) as
-        | AutomationConfig
-        | undefined,
-      data: {
-        ...(data as Record<string, unknown>),
-        businessId: business.id,
-        testMode: true,
-      },
-    });
-
-    const completedTime = Date.now();
-
-    const errorMessage =
-      !result.success
-        ? "message" in result &&
-          typeof result.message === "string"
-          ? result.message
-          : "Automation action failed."
+    const durationMs = Date.now() - startedAt;
+    const executionSuccess = execution.success === true;
+    const executionMessage =
+      "message" in execution && typeof execution.message === "string"
+        ? execution.message
         : undefined;
-
-    return NextResponse.json({
-      success: result.success,
-      message: result.success
-        ? "Automation test completed."
-        : "Automation test completed with an action failure.",
-      testMode: true,
-      execution: {
-        automationId: automation.id,
-        automationName: automation.name,
-        trigger: automation.trigger,
-        action: automation.action,
-        enabled: automation.enabled,
-        startedAt,
-        completedAt: new Date(completedTime).toISOString(),
-        durationMs: completedTime - startTime,
-        result,
-        ...(errorMessage ? { error: errorMessage } : {}),
-      },
-      historySaved: false,
-    });
-  } catch (error) {
-    console.error("POST /api/automations/[id]/test error:", error);
 
     return NextResponse.json(
       {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to test automation.",
+        success: executionSuccess,
+        ...(executionMessage ? { error: executionMessage } : {}),
+        automation: { id: automation.id, name: automation.name },
+        execution: {
+          success: executionSuccess,
+          durationMs,
+          result: execution,
+          ...(executionMessage ? { error: executionMessage } : {}),
+        },
+        historySaved: false,
       },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("POST /api/automations/[id]/test error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to test automation" },
       { status: 500 }
     );
   }

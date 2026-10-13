@@ -97,8 +97,12 @@ export async function generateAIResponse(
   messages: ChatMessage[],
   context?: BusinessContext
 ): Promise<string> {
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error("GROQ_API_KEY is not configured");
+  const hasNeonGateway =
+    Boolean(process.env.NEON_AI_GATEWAY_TOKEN && process.env.NEON_AI_GATEWAY_BASE_URL);
+  const hasGroq = Boolean(process.env.GROQ_API_KEY);
+
+  if (!hasNeonGateway && !hasGroq) {
+    throw new Error("Neither NEON_AI_GATEWAY_TOKEN nor GROQ_API_KEY is configured");
   }
 
   if (!messages.length) {
@@ -115,15 +119,7 @@ export async function generateAIResponse(
   }
 
   const businessContext = summarizeBusiness(context);
-
-  const response = await groq.chat.completions.create({
-    model:
-      process.env.GROQ_MODEL || "openai/gpt-oss-120b",
-
-    messages: [
-      {
-        role: "system",
-        content: `
+  const systemPrompt = `
 You are Autozip AI, a business automation consultant and operations assistant.
 
 Your purpose is to help business owners understand their operations,
@@ -179,15 +175,59 @@ DATE AND ACCURACY RULES:
 - Use exact business counts from the supplied context.
 - Clearly distinguish configured automations from recommendations.
 - Never claim an external integration is connected unless its status confirms it.
-        `.trim(),
-      },
+`.trim();
 
-      ...messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
-    ],
+  const chatMessages = [
+    {
+      role: "system" as const,
+      content: systemPrompt,
+    },
+    ...messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    })),
+  ];
 
+  if (hasNeonGateway) {
+    try {
+      const gatewayRes = await fetch(
+        `${process.env.NEON_AI_GATEWAY_BASE_URL}/v1/chat/completions`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.NEON_AI_GATEWAY_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: process.env.NEON_AI_MODEL || "gpt-5-mini",
+            messages: chatMessages,
+            temperature: 0.4,
+            max_tokens: 3000,
+          }),
+        }
+      );
+
+      if (gatewayRes.ok) {
+        const data = await gatewayRes.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content?.trim()) {
+          return content;
+        }
+      }
+    } catch (err) {
+      console.warn("Neon AI Gateway request failed, falling back to Groq:", err);
+    }
+  }
+
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error(
+      "Neon AI Gateway was unavailable and GROQ_API_KEY is not configured."
+    );
+  }
+
+  const response = await groq.chat.completions.create({
+    model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+    messages: chatMessages,
     temperature: 0.4,
     max_tokens: 3000,
   });

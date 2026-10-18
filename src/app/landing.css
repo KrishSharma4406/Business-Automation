@@ -103,6 +103,65 @@ body {
   }
 }
 
+@keyframes azBlink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+@keyframes azStepWave {
+  0%, 100% {
+    border-color: var(--az-border-subtle);
+    background-color: var(--az-surface-alt);
+  }
+  15% {
+    border-color: rgba(16, 185, 129, 0.45);
+    background-color: rgba(16, 185, 129, 0.07);
+  }
+  30% {
+    border-color: var(--az-border-subtle);
+    background-color: var(--az-surface-alt);
+  }
+}
+
+@keyframes azCodeFade {
+  from {
+    opacity: 0.35;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes azCtaShimmer {
+  0% {
+    left: -50%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+
+.az-flow-step-1 { animation: azStepWave 6s ease-in-out infinite 0s; }
+.az-flow-step-2 { animation: azStepWave 6s ease-in-out infinite 1.5s; }
+.az-flow-step-3 { animation: azStepWave 6s ease-in-out infinite 3.0s; }
+.az-flow-step-4 { animation: azStepWave 6s ease-in-out infinite 4.5s; }
+
+.az-cursor-blink {
+  display: inline-block;
+  font-family: var(--az-font-mono);
+  font-weight: 700;
+  color: var(--az-emerald);
+  animation: azBlink 1s infinite;
+  margin-left: 2px;
+}
+
+
 /* Scroll reveal helpers */
 .az-reveal {
   opacity: 0;
@@ -643,6 +702,93 @@ body {
 }
 
 /* ==========================================================================
+   CONTINUOUS MARQUEE TICKER (Right-to-Left Sliding Bar)
+   ========================================================================== */
+.az-ticker {
+  width: 100%;
+  background-color: #08090c;
+  border-top: 1px solid var(--az-border);
+  border-bottom: 1px solid var(--az-border);
+  overflow: hidden;
+  position: relative;
+  padding: 15px 0;
+  user-select: none;
+  z-index: 10;
+}
+
+.az-ticker-fade-l,
+.az-ticker-fade-r {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.az-ticker-fade-l {
+  left: 0;
+  background: linear-gradient(to right, #08090c, transparent);
+}
+
+.az-ticker-fade-r {
+  right: 0;
+  background: linear-gradient(to left, #08090c, transparent);
+}
+
+.az-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: azMarquee 38s linear infinite;
+  will-change: transform;
+}
+
+.az-ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes azMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.az-ticker-group {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  padding-right: 36px;
+}
+
+.az-ticker-item {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #7b8595;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.az-ticker-item:hover {
+  color: #ffffff;
+}
+
+.az-ticker-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--az-emerald);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.85);
+  flex-shrink: 0;
+}
+
+
+/* ==========================================================================
    ARCHITECTURE SECTION (How Autozip Works)
    ========================================================================== */
 .az-section {
@@ -1023,7 +1169,21 @@ body {
   flex-direction: column;
   align-items: flex-start;
   gap: 28px;
+  position: relative;
+  overflow: hidden;
   transition: border-color 0.25s ease;
+}
+
+.az-cta-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.7), transparent);
+  animation: azCtaShimmer 7s linear infinite;
+  pointer-events: none;
 }
 
 .az-cta-box:hover {
@@ -1124,6 +1284,281 @@ body {
 .az-footer-link:hover {
   color: #ffffff;
 }
+
+/* ==========================================================================
+   AUTH PAGES (Login & Register)
+   ========================================================================== */
+.az-auth-page {
+  min-height: 100vh;
+  background-color: var(--az-bg);
+  color: var(--az-text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+.az-auth-navbar {
+  border-bottom: 1px solid var(--az-border);
+  padding: 16px 28px;
+  background-color: rgba(11, 13, 16, 0.95);
+}
+
+.az-auth-nav-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.az-auth-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+}
+
+.az-auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--az-surface);
+  border: 1px solid var(--az-border);
+  border-radius: 3px;
+  padding: 36px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.az-auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent);
+}
+
+.az-auth-head {
+  margin-bottom: 28px;
+}
+
+.az-auth-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin-top: 10px;
+  margin-bottom: 6px;
+}
+
+.az-auth-desc {
+  font-size: 13px;
+  color: var(--az-text-secondary);
+  line-height: 1.5;
+}
+
+.az-auth-error {
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  margin-bottom: 20px;
+  border-radius: 2px;
+}
+
+.az-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.az-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.az-field-label {
+  font-family: var(--az-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--az-text-muted);
+}
+
+.az-field-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--az-surface-alt);
+  border: 1px solid var(--az-border);
+  color: #ffffff;
+  font-family: var(--az-font-sans);
+  font-size: 13px;
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.az-field-input:focus {
+  border-color: #ffffff;
+  background: var(--az-surface-elevated);
+}
+
+.az-auth-submit-btn {
+  width: 100%;
+  padding: 13px;
+  background: #f0f3f7;
+  color: #0b0d10;
+  font-family: var(--az-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid #ffffff;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  margin-top: 6px;
+}
+
+.az-auth-submit-btn:hover {
+  background: #ffffff;
+}
+
+.az-auth-submit-btn:active {
+  transform: scale(0.98);
+}
+
+.az-auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.az-auth-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--az-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  color: var(--az-text-muted);
+}
+
+.az-auth-footer a {
+  color: var(--az-text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.az-auth-footer a:hover {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   PRICING PAGE
+   ========================================================================== */
+.az-pricing-nodes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  max-width: 980px;
+  margin: 0 auto 64px;
+}
+
+@media (max-width: 800px) {
+  .az-pricing-nodes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.az-node-card {
+  background: var(--az-surface);
+  border: 1px solid var(--az-border);
+  border-radius: 3px;
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color 0.2s ease;
+}
+
+.az-node-card:hover {
+  border-color: var(--az-border-bright);
+}
+
+.az-node-card.highlighted {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: var(--az-surface-alt);
+}
+
+.az-node-head {
+  margin-bottom: 24px;
+}
+
+.az-node-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 10px;
+  margin-bottom: 6px;
+}
+
+.az-node-desc {
+  font-size: 13px;
+  color: var(--az-text-secondary);
+  line-height: 1.5;
+}
+
+.az-node-price {
+  font-family: var(--az-font-mono);
+  font-size: 36px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--az-border-subtle);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.az-node-price span {
+  font-size: 13px;
+  color: var(--az-text-muted);
+  font-weight: 400;
+}
+
+.az-node-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+  list-style: none;
+}
+
+.az-node-spec-item {
+  font-family: var(--az-font-mono);
+  font-size: 12px;
+  color: var(--az-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.az-node-spec-dot {
+  width: 4px;
+  height: 4px;
+  background-color: var(--az-emerald);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 
 /* Mobile Responsiveness adjustments */
 @media (max-width: 768px) {

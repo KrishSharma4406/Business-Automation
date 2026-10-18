@@ -2,6 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import "@/src/app/landing.css";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,7 +20,7 @@ export default function RegisterPage() {
     const confirm = formData.get("confirm") as string;
 
     if (password !== confirm) {
-      setError("Passwords do not match");
+      setError("Access keys do not match. Verify password entry.");
       setLoading(false);
       return;
     }
@@ -37,169 +39,130 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Registration failed");
+        throw new Error(data.error || "Workspace node provisioning failed.");
       }
 
       router.push("/auth/login");
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err.message || "An unexpected error occurred during node provisioning.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--bg-app)",
-        color: "var(--text-primary)",
-        padding: "20px",
-      }}
-    >
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          width: "100%",
-          maxWidth: "380px",
-          padding: "32px",
-          borderRadius: "var(--radius-lg)",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-default)",
-        }}
-      >
-        <p
-          style={{
-            fontSize: "20px",
-            fontWeight: 700,
-            marginBottom: "6px",
-            color: "var(--text-primary)",
-          }}
-        >
-          Create account
-        </p>
+    <div className="az-auth-page">
+      <nav className="az-auth-navbar">
+        <div className="az-auth-nav-inner">
+          <Link href="/" className="az-brand">
+            <span className="az-brand-name">AUTOZIP</span>
+            <span className="az-brand-spec">SYS.VER 2.4</span>
+          </Link>
+          <Link href="/" className="az-btn-secondary" style={{ fontSize: "11px", padding: "6px 12px" }}>
+            Return to Root
+          </Link>
+        </div>
+      </nav>
 
-        <p
-          style={{
-            color: "var(--text-muted)",
-            marginBottom: "24px",
-            fontSize: "13px",
-          }}
-        >
-          Sign up for Autozip
-        </p>
-
-        {error && (
-          <div
-            style={{
-              padding: "10px 14px",
-              marginBottom: "16px",
-              borderRadius: "var(--radius-md)",
-              background: "var(--red-subtle)",
-              border: "1px solid rgba(231, 76, 60, 0.25)",
-              color: "var(--red)",
-              fontSize: "13px",
-            }}
-          >
-            {error}
+      <main className="az-auth-main">
+        <div className="az-auth-card">
+          <div className="az-auth-head">
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <span className="az-tag az-tag-emerald">
+                <span className="az-status-dot" />
+                NEW PROVISIONING
+              </span>
+              <span className="az-tag">WORKSPACE NODE</span>
+            </div>
+            <h1 className="az-auth-title">Deploy Workspace</h1>
+            <p className="az-auth-desc">Provision your isolated Neon PostgreSQL cluster and autonomous ingestion runtime.</p>
           </div>
-        )}
 
-        <FormField label="Name" name="name" placeholder="Your name" required />
-        <FormField label="Email" name="email" type="email" placeholder="you@example.com" required />
-        <FormField label="Password" name="password" type="password" placeholder="Create a password" required />
-        <FormField label="Confirm Password" name="confirm" type="password" placeholder="Confirm password" required />
+          {error && (
+            <div className="az-auth-error">
+              [PROVISION_FAILED] {error}
+            </div>
+          )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: "10px",
-            marginTop: "4px",
-            borderRadius: "var(--radius-md)",
-            border: "none",
-            background: "var(--accent)",
-            color: "#fff",
-            fontWeight: 600,
-            fontSize: "13px",
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.6 : 1,
-          }}
-        >
-          {loading ? "Creating account..." : "Create account"}
-        </button>
+          <form onSubmit={handleSubmit} className="az-auth-form">
+            <div className="az-field">
+              <label htmlFor="name" className="az-field-label">
+                Operator / Business Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Acme Autonomous Ops"
+                required
+                className="az-field-input"
+              />
+            </div>
 
-        <p
-          style={{
-            marginTop: "16px",
-            textAlign: "center",
-            fontSize: "12px",
-            color: "var(--text-muted)",
-          }}
-        >
-          Already have an account?{" "}
-          <a
-            href="/auth/login"
-            style={{
-              color: "var(--accent)",
-              textDecoration: "none",
-            }}
-          >
-            Sign in
-          </a>
-        </p>
-      </form>
-    </main>
-  );
-}
+            <div className="az-field">
+              <label htmlFor="email" className="az-field-label">
+                Operator Identity // Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="operator@company.com"
+                required
+                className="az-field-input"
+              />
+            </div>
 
-function FormField({
-  label,
-  name,
-  type = "text",
-  placeholder,
-  required = false,
-}: {
-  label: string;
-  name: string;
-  type?: string;
-  placeholder?: string;
-  required?: boolean;
-}) {
-  return (
-    <div style={{ marginBottom: "16px" }}>
-      <label
-        style={{
-          display: "block",
-          marginBottom: "6px",
-          fontSize: "12px",
-          fontWeight: 500,
-          color: "var(--text-secondary)",
-        }}
-      >
-        {label}
-      </label>
-      <input
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        required={required}
-        style={{
-          boxSizing: "border-box",
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: "var(--radius-md)",
-          border: "1px solid var(--border-default)",
-          background: "var(--bg-input)",
-          color: "var(--text-primary)",
-          fontSize: "13px",
-          outline: "none",
-        }}
-      />
+            <div className="az-field">
+              <label htmlFor="password" className="az-field-label">
+                Access Key // Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Minimum 8 characters"
+                required
+                className="az-field-input"
+              />
+            </div>
+
+            <div className="az-field">
+              <label htmlFor="confirm" className="az-field-label">
+                Confirm Access Key
+              </label>
+              <input
+                id="confirm"
+                name="confirm"
+                type="password"
+                placeholder="Confirm password"
+                required
+                className="az-field-input"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="az-auth-submit-btn"
+            >
+              {loading ? "Provisioning Cluster..." : "Deploy Workspace Node"}
+            </button>
+          </form>
+
+          <div className="az-auth-footer">
+            <div>
+              Existing operator?{" "}
+              <Link href="/auth/login">
+                Authenticate Existing Node
+              </Link>
+            </div>
+            <div style={{ color: "var(--az-text-muted)", fontSize: "10px" }}>
+              Zero Lock-in // Multi-tenant PostgreSQL Storage Segregation
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

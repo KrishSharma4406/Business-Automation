@@ -26,6 +26,34 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 /* ==========================================================================
+   ANIMATED NUMBER COUNTER COMPONENT
+   ========================================================================== */
+function Counter({ target, suffix = "", duration = 1400 }: { target: number; suffix?: string; duration?: number }) {
+  const [val, setVal] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    let animId: number;
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      setVal(Math.floor(eased * target));
+      if (progress < 1) {
+        animId = requestAnimationFrame(step);
+      }
+    };
+
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [target, duration]);
+
+  return <span>{val}{suffix}</span>;
+}
+
+
+/* ==========================================================================
    BLUEPRINTS DATA
    ========================================================================== */
 const BLUEPRINTS = [
@@ -131,6 +159,23 @@ const INITIAL_LEDGER: LedgerItem[] = [
 ];
 
 /* ==========================================================================
+   TICKER PHRASES (Marquee Stream)
+   ========================================================================== */
+const TICKER_ITEMS = [
+  "SYSTEMS OVER HEADCOUNT",
+  "DETERMINISTIC WORKFLOWS",
+  "REAL-TIME BUSINESS SYNC",
+  "HIGH-RELIABILITY ENGINEERING",
+  "CAPTURE EVERY LEAD",
+  "ELIMINATE OPERATIONAL FRICTION",
+  "ZERO-LOSS EXECUTION",
+  "SUB-400MS INTENT INFERENCE",
+  "REPEATABLE REVENUE ARCHITECTURE",
+  "ATOMIC POSTGRES PERSISTENCE"
+];
+
+
+/* ==========================================================================
    MAIN LANDING PAGE
    ========================================================================== */
 export default function LandingPage() {
@@ -155,6 +200,54 @@ export default function LandingPage() {
     elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
+  }, []);
+
+  // Continuous background telemetry heartbeat
+  useEffect(() => {
+    const backgroundEvents: LedgerItem[] = [
+      {
+        id: "bg-1",
+        source: "WhatsApp :: +91 94210 88712",
+        time: "",
+        body: "Checking availability for automated dental clinic reminders and WhatsApp intake.",
+        scoreText: "AI Score: 95/100 [High Intent]",
+        actionText: "Action: Locked appointment slot in Google Calendar"
+      },
+      {
+        id: "bg-2",
+        source: "Inbound Webhook :: billing.event/quote-v2",
+        time: "",
+        body: "Enterprise lead requested custom SLA and private VPC connection for 50+ staff.",
+        scoreText: "AI Score: 98/100 [Enterprise Prime]",
+        actionText: "Action: Auto-assigned to Principal Solutions Architect"
+      },
+      {
+        id: "bg-3",
+        source: "SMTP Inbound :: procurement@horizontech.in",
+        time: "",
+        body: "RFP inquiry regarding WhatsApp message volume limits and pricing tier structure.",
+        scoreText: "AI Score: 91/100 [Commercial RFP]",
+        actionText: "Action: Dispatched volume tier matrix PDF"
+      }
+    ];
+
+    let index = 0;
+    const timer = setInterval(() => {
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}.${String(now.getMilliseconds()).padStart(3, "0")}`;
+      
+      const item = {
+        ...backgroundEvents[index % backgroundEvents.length],
+        id: `auto-${Date.now()}`,
+        time: timeStr
+      };
+      index++;
+
+      setLedger((prev) => [item, ...prev.slice(0, 4)]);
+      setRequestCount((prev) => prev + 1);
+    }, 7000);
+
+    return () => clearInterval(timer);
   }, []);
 
   // Event simulator
@@ -233,6 +326,7 @@ export default function LandingPage() {
             <span className="az-tag az-tag-emerald">
               <span className="az-status-dot" />
               Runtime Active
+              <span className="az-cursor-blink">_</span>
             </span>
             <span className="az-tag">Autonomous Business OS</span>
           </div>
@@ -398,21 +492,42 @@ export default function LandingPage() {
       <div className="az-metric-strip az-reveal">
         <div className="az-metric-grid">
           <div className="az-metric-cell">
-            <div className="az-metric-val">340ms</div>
+            <div className="az-metric-val"><Counter target={340} suffix="ms" /></div>
             <div className="az-metric-label">Average AI Classification &amp; Intent Latency</div>
           </div>
           <div className="az-metric-cell">
-            <div className="az-metric-val">100%</div>
+            <div className="az-metric-val"><Counter target={100} suffix="%" /></div>
             <div className="az-metric-label">Audit Trail &amp; Database State Persistence</div>
           </div>
           <div className="az-metric-cell">
-            <div className="az-metric-val">4 Channels</div>
+            <div className="az-metric-val"><Counter target={4} suffix=" Channels" /></div>
             <div className="az-metric-label">Unified Synchronous Ingestion Protocols</div>
           </div>
           <div className="az-metric-cell">
             <div className="az-metric-val">Zero</div>
             <div className="az-metric-label">Manual Data Entry or Spreadsheets Required</div>
           </div>
+        </div>
+      </div>
+
+      {/* ── CONTINUOUS MARQUEE TICKER (Right-to-Left Sliding Bar) ── */}
+      <div className="az-ticker" aria-hidden="true">
+        <div className="az-ticker-fade-l" />
+        <div className="az-ticker-fade-r" />
+        <div className="az-ticker-track">
+          {[1, 2].map((setIndex) => (
+            <div key={`ticker-set-${setIndex}`} className="az-ticker-group">
+              {TICKER_ITEMS.map((item, idx) => (
+                <span
+                  key={`item-${setIndex}-${idx}`}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "36px" }}
+                >
+                  <span className="az-ticker-item">{item}</span>
+                  <span className="az-ticker-dot" />
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -475,7 +590,7 @@ export default function LandingPage() {
                 <span className="az-tag az-tag-emerald">STREAM ACTIVE</span>
               </div>
               
-              <div className="az-flow-step">
+              <div className="az-flow-step az-flow-step-1">
                 <div className="az-flow-step-tag">STAGE 1 // INTAKE</div>
                 <div className="az-flow-step-title">Customer Inquiry Ingress</div>
                 <div className="az-flow-step-desc">
@@ -486,7 +601,7 @@ export default function LandingPage() {
               <div className="az-flow-connector">|</div>
               <div className="az-flow-connector">v</div>
 
-              <div className="az-flow-step">
+              <div className="az-flow-step az-flow-step-2">
                 <div className="az-flow-step-tag">STAGE 2 // EVALUATION</div>
                 <div className="az-flow-step-title">AI Intent &amp; Qualification Inference</div>
                 <div className="az-flow-step-desc">
@@ -497,7 +612,7 @@ export default function LandingPage() {
               <div className="az-flow-connector">|</div>
               <div className="az-flow-connector">v</div>
 
-              <div className="az-flow-step">
+              <div className="az-flow-step az-flow-step-3">
                 <div className="az-flow-step-tag">STAGE 3 // DISPATCH</div>
                 <div className="az-flow-step-title">Trigger Execution &amp; Dispatch</div>
                 <div className="az-flow-step-desc">
@@ -508,7 +623,7 @@ export default function LandingPage() {
               <div className="az-flow-connector">|</div>
               <div className="az-flow-connector">v</div>
 
-              <div className="az-flow-step">
+              <div className="az-flow-step az-flow-step-4">
                 <div className="az-flow-step-tag">STAGE 4 // PERSISTENCE</div>
                 <div className="az-flow-step-title">Relational State Commit</div>
                 <div className="az-flow-step-desc">
@@ -552,7 +667,7 @@ export default function LandingPage() {
             <h3 className="az-blueprint-name">{BLUEPRINTS[activeBlueprint].name}</h3>
             <p className="az-blueprint-desc">{BLUEPRINTS[activeBlueprint].desc}</p>
 
-            <pre className="az-blueprint-code">
+            <pre key={activeBlueprint} className="az-blueprint-code">
               <code>{BLUEPRINTS[activeBlueprint].code}</code>
             </pre>
           </div>

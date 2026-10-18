@@ -3,6 +3,8 @@
 import { FormEvent, Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import "@/src/app/landing.css";
 
 function LoginForm() {
   const router = useRouter();
@@ -27,7 +29,7 @@ function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Invalid email or password");
+      setError("Authentication failed. Invalid operator credentials.");
       return;
     }
 
@@ -37,164 +39,100 @@ function LoginForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        width: "100%",
-        maxWidth: "380px",
-        padding: "32px",
-        borderRadius: "var(--radius-lg)",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-default)",
-      }}
-    >
-      <p
-        style={{
-          fontSize: "20px",
-          fontWeight: 700,
-          marginBottom: "6px",
-          color: "var(--text-primary)",
-        }}
-      >
-        Welcome back
-      </p>
-
-      <p
-        style={{
-          color: "var(--text-muted)",
-          marginBottom: "24px",
-          fontSize: "13px",
-        }}
-      >
-        Sign in to Autozip
-      </p>
+    <div className="az-auth-card">
+      <div className="az-auth-head">
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+          <span className="az-tag az-tag-emerald">
+            <span className="az-status-dot" />
+            NODE ACCESS
+          </span>
+          <span className="az-tag">CORE // SECURE</span>
+        </div>
+        <h1 className="az-auth-title">Authenticate Operator</h1>
+        <p className="az-auth-desc">Enter access credentials to connect to the Autozip runtime workspace.</p>
+      </div>
 
       {error && (
-        <div
-          style={{
-            padding: "10px 14px",
-            marginBottom: "16px",
-            borderRadius: "var(--radius-md)",
-            background: "var(--red-subtle)",
-            border: "1px solid rgba(231, 76, 60, 0.25)",
-            color: "var(--red)",
-            fontSize: "13px",
-          }}
-        >
-          {error}
+        <div className="az-auth-error">
+          [AUTH_ERROR] {error}
         </div>
       )}
 
-      <label
-        htmlFor="email"
-        style={{
-          display: "block",
-          marginBottom: "6px",
-          fontSize: "12px",
-          fontWeight: 500,
-          color: "var(--text-secondary)",
-        }}
-      >
-        Email
-      </label>
+      <form onSubmit={handleSubmit} className="az-auth-form">
+        <div className="az-field">
+          <label htmlFor="email" className="az-field-label">
+            Operator Identity // Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@autozip.local"
+            required
+            className="az-field-input"
+          />
+        </div>
 
-      <input
-        id="email"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="admin@autozip.local"
-        required
-        style={{
-          boxSizing: "border-box",
-          width: "100%",
-          padding: "10px 12px",
-          marginBottom: "16px",
-          borderRadius: "var(--radius-md)",
-          border: "1px solid var(--border-default)",
-          background: "var(--bg-input)",
-          color: "var(--text-primary)",
-          fontSize: "13px",
-          outline: "none",
-        }}
-      />
+        <div className="az-field">
+          <label htmlFor="password" className="az-field-label">
+            Access Key // Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••••••"
+            required
+            className="az-field-input"
+          />
+        </div>
 
-      <label
-        htmlFor="password"
-        style={{
-          display: "block",
-          marginBottom: "6px",
-          fontSize: "12px",
-          fontWeight: 500,
-          color: "var(--text-secondary)",
-        }}
-      >
-        Password
-      </label>
+        <button
+          type="submit"
+          disabled={loading}
+          className="az-auth-submit-btn"
+        >
+          {loading ? "Authenticating Node..." : "Authenticate & Connect"}
+        </button>
+      </form>
 
-      <input
-        id="password"
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="admin123"
-        required
-        style={{
-          boxSizing: "border-box",
-          width: "100%",
-          padding: "10px 12px",
-          marginBottom: "20px",
-          borderRadius: "var(--radius-md)",
-          border: "1px solid var(--border-default)",
-          background: "var(--bg-input)",
-          color: "var(--text-primary)",
-          fontSize: "13px",
-          outline: "none",
-        }}
-      />
-
-      <button
-        type="submit"
-        disabled={loading}
-        style={{
-          width: "100%",
-          padding: "10px",
-          borderRadius: "var(--radius-md)",
-          border: "none",
-          background: "var(--accent)",
-          color: "#fff",
-          fontWeight: 600,
-          fontSize: "13px",
-          cursor: loading ? "not-allowed" : "pointer",
-          opacity: loading ? 0.6 : 1,
-        }}
-      >
-        {loading ? "Signing in..." : "Sign in"}
-      </button>
-    </form>
+      <div className="az-auth-footer">
+        <div>
+          New operator?{" "}
+          <Link href="/auth/register">
+            Initialize Workspace Node
+          </Link>
+        </div>
+        <div style={{ color: "var(--az-text-muted)", fontSize: "10px" }}>
+          TLS 1.3 // Neon Serverless Postgres Encrypted
+        </div>
+      </div>
+    </div>
   );
 }
 
-export default function Page() {
+export default function LoginPage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--bg-app)",
-        color: "var(--text-primary)",
-        padding: "20px",
-      }}
-    >
-      <Suspense
-        fallback={
-          <div style={{ color: "var(--text-muted)", fontSize: "13px" }}>Loading...</div>
-        }
-      >
-        <LoginForm />
-      </Suspense>
-    </main>
+    <div className="az-auth-page">
+      <nav className="az-auth-navbar">
+        <div className="az-auth-nav-inner">
+          <Link href="/" className="az-brand">
+            <span className="az-brand-name">AUTOZIP</span>
+            <span className="az-brand-spec">SYS.VER 2.4</span>
+          </Link>
+          <Link href="/" className="az-btn-secondary" style={{ fontSize: "11px", padding: "6px 12px" }}>
+            Return to Root
+          </Link>
+        </div>
+      </nav>
+
+      <main className="az-auth-main">
+        <Suspense fallback={<div className="az-mono" style={{ color: "var(--az-text-muted)" }}>Loading Access Node...</div>}>
+          <LoginForm />
+        </Suspense>
+      </main>
+    </div>
   );
 }

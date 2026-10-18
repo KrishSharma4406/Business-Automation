@@ -1,0 +1,1137 @@
+/* ==========================================================================
+   AUTOZIP // AUTONOMOUS BUSINESS OPERATING SYSTEM
+   Architectural Industrial Monochrome Design System with Precision Animations
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ---------- Reset & Base Tokens ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --az-bg: #0b0d10;
+  --az-surface: #111418;
+  --az-surface-alt: #161a20;
+  --az-surface-elevated: #1b2128;
+  
+  --az-border: #222730;
+  --az-border-bright: #303744;
+  --az-border-subtle: #191d24;
+  
+  --az-text-primary: #f0f3f7;
+  --az-text-secondary: #9aa4b2;
+  --az-text-muted: #616c7d;
+  --az-text-code: #8392a7;
+  
+  --az-emerald: #10b981;
+  --az-emerald-dim: rgba(16, 185, 129, 0.15);
+  --az-amber: #f59e0b;
+  --az-amber-dim: rgba(245, 158, 11, 0.15);
+  --az-cyan: #38bdf8;
+  --az-cyan-dim: rgba(56, 189, 248, 0.15);
+  
+  --az-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --az-font-mono: 'Geist Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+}
+
+body {
+  background-color: var(--az-bg);
+  color: var(--az-text-primary);
+  font-family: var(--az-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.az-page {
+  min-height: 100vh;
+  background-color: var(--az-bg);
+  color: var(--az-text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Keyframe Animations ---------- */
+@keyframes azPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+}
+
+@keyframes azRowFlash {
+  0% {
+    background-color: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.4);
+    transform: translateY(-4px);
+  }
+  100% {
+    background-color: var(--az-surface-alt);
+    border-color: var(--az-border-subtle);
+    transform: translateY(0);
+  }
+}
+
+@keyframes azSignalFlow {
+  0% {
+    opacity: 0.2;
+    transform: translateY(-2px);
+  }
+  50% {
+    opacity: 1;
+    color: var(--az-emerald);
+  }
+  100% {
+    opacity: 0.2;
+    transform: translateY(2px);
+  }
+}
+
+@keyframes azScanline {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+/* Scroll reveal helpers */
+.az-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.az-reveal.az-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- Typography Utilities ---------- */
+.az-mono {
+  font-family: var(--az-font-mono);
+}
+
+.az-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--az-text-muted);
+  background: var(--az-surface);
+  border: 1px solid var(--az-border);
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.az-tag-emerald {
+  color: var(--az-emerald);
+  background: var(--az-emerald-dim);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.az-tag-amber {
+  color: var(--az-amber);
+  background: var(--az-amber-dim);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.az-tag-cyan {
+  color: var(--az-cyan);
+  background: var(--az-cyan-dim);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* ==========================================================================
+   NAVBAR
+   ========================================================================== */
+.az-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: rgba(11, 13, 16, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--az-border);
+  height: 64px;
+}
+
+.az-nav-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.az-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--az-text-primary);
+}
+
+.az-brand-name {
+  font-family: var(--az-font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+}
+
+.az-brand-spec {
+  font-family: var(--az-font-mono);
+  font-size: 10px;
+  color: var(--az-text-muted);
+  border: 1px solid var(--az-border);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.az-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  list-style: none;
+}
+
+.az-nav-link {
+  font-family: var(--az-font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--az-text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.az-nav-link:hover {
+  color: #ffffff;
+}
+
+.az-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.az-btn-secondary {
+  font-family: var(--az-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--az-text-secondary);
+  text-decoration: none;
+  padding: 8px 16px;
+  border: 1px solid var(--az-border);
+  background: var(--az-surface);
+  border-radius: 3px;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+}
+
+.az-btn-secondary:hover {
+  color: #ffffff;
+  border-color: var(--az-border-bright);
+  background: var(--az-surface-alt);
+}
+
+.az-btn-secondary:active {
+  transform: scale(0.98);
+}
+
+.az-btn-primary {
+  font-family: var(--az-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: #0b0d10;
+  text-decoration: none;
+  padding: 8px 18px;
+  background: #f0f3f7;
+  border: 1px solid #ffffff;
+  border-radius: 3px;
+  transition: background 0.15s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+
+.az-btn-primary:hover {
+  background: #ffffff;
+}
+
+.az-btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================================
+   HERO SECTION
+   ========================================================================== */
+.az-hero {
+  padding: 84px 28px 72px;
+  border-bottom: 1px solid var(--az-border);
+  position: relative;
+}
+
+.az-hero-container {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.az-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.az-hero-title {
+  font-size: clamp(34px, 5.2vw, 68px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: #ffffff;
+  max-width: 980px;
+  margin-bottom: 24px;
+}
+
+.az-hero-lead {
+  font-size: clamp(16px, 1.8vw, 20px);
+  line-height: 1.6;
+  color: var(--az-text-secondary);
+  max-width: 760px;
+  margin-bottom: 36px;
+}
+
+.az-hero-cta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 56px;
+}
+
+.az-hero-cta .az-btn-primary {
+  padding: 13px 26px;
+  font-size: 13px;
+}
+
+.az-hero-cta .az-btn-secondary {
+  padding: 13px 24px;
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   LIVE OPERATIONAL CONSOLE (Interactive Hero Monitor)
+   ========================================================================== */
+.az-console {
+  border: 1px solid var(--az-border);
+  background: var(--az-surface);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.az-console-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--az-surface-alt);
+  border-bottom: 1px solid var(--az-border);
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  position: relative;
+  overflow: hidden;
+}
+
+.az-scanline-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.8), transparent);
+  animation: azScanline 4s linear infinite;
+  pointer-events: none;
+}
+
+.az-console-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--az-text-secondary);
+}
+
+.az-status-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--az-emerald);
+  border-radius: 50%;
+  animation: azPulse 2.4s ease-in-out infinite;
+}
+
+.az-console-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  color: var(--az-text-muted);
+}
+
+.az-console-telemetry span strong {
+  color: var(--az-text-primary);
+  font-weight: 500;
+}
+
+.az-console-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  min-height: 420px;
+}
+
+@media (max-width: 1024px) {
+  .az-console-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.az-console-col {
+  padding: 20px;
+  border-right: 1px solid var(--az-border);
+}
+
+.az-console-col:last-child {
+  border-right: none;
+}
+
+.az-col-title {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--az-text-muted);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--az-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Console Col 1: Streams */
+.az-stream-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.az-stream-item {
+  padding: 10px 12px;
+  background: var(--az-surface-alt);
+  border: 1px solid var(--az-border-subtle);
+  border-radius: 2px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.az-stream-item:hover {
+  border-color: var(--az-border-bright);
+}
+
+.az-stream-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--az-text-primary);
+  margin-bottom: 4px;
+}
+
+.az-stream-detail {
+  font-family: var(--az-font-mono);
+  font-size: 10px;
+  color: var(--az-text-muted);
+}
+
+/* Console Col 2: Live Activity Ledger & Ingress Simulation */
+.az-sim-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.az-sim-btn {
+  font-family: var(--az-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 9px;
+  background: var(--az-surface-alt);
+  border: 1px solid var(--az-border);
+  color: var(--az-text-secondary);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.az-sim-btn:hover {
+  color: #ffffff;
+  border-color: var(--az-border-bright);
+  background: var(--az-surface-elevated);
+}
+
+.az-sim-btn:active {
+  transform: scale(0.96);
+}
+
+.az-ledger-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 330px;
+  overflow-y: auto;
+}
+
+.az-ledger-row {
+  padding: 12px 14px;
+  background: var(--az-surface-alt);
+  border: 1px solid var(--az-border-subtle);
+  border-radius: 2px;
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  animation: azRowFlash 0.75s ease forwards;
+}
+
+.az-ledger-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.az-ledger-source {
+  color: var(--az-text-secondary);
+  font-weight: 600;
+}
+
+.az-ledger-time {
+  color: var(--az-text-muted);
+  font-size: 10px;
+}
+
+.az-ledger-body {
+  color: var(--az-text-primary);
+  margin-bottom: 8px;
+  font-family: var(--az-font-sans);
+  font-size: 12px;
+}
+
+.az-ledger-dispatch {
+  font-size: 10px;
+  color: var(--az-emerald);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid var(--az-border-subtle);
+}
+
+/* Console Col 3: Realtime Engine Parameters */
+.az-stat-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.az-param-box {
+  padding: 12px;
+  background: var(--az-surface-alt);
+  border: 1px solid var(--az-border-subtle);
+  border-radius: 2px;
+  transition: border-color 0.2s ease;
+}
+
+.az-param-box:hover {
+  border-color: var(--az-border-bright);
+}
+
+.az-param-label {
+  font-family: var(--az-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--az-text-muted);
+  margin-bottom: 4px;
+}
+
+.az-param-value {
+  font-family: var(--az-font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.az-param-sub {
+  font-family: var(--az-font-mono);
+  font-size: 10px;
+  color: var(--az-text-secondary);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   METRIC STRIP
+   ========================================================================== */
+.az-metric-strip {
+  border-bottom: 1px solid var(--az-border);
+  background: var(--az-surface);
+}
+
+.az-metric-grid {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 768px) {
+  .az-metric-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.az-metric-cell {
+  padding: 32px 28px;
+  border-right: 1px solid var(--az-border);
+  transition: background 0.2s ease;
+}
+
+.az-metric-cell:last-child {
+  border-right: none;
+}
+
+.az-metric-cell:hover {
+  background: var(--az-surface-alt);
+}
+
+.az-metric-val {
+  font-family: var(--az-font-mono);
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  margin-bottom: 6px;
+}
+
+.az-metric-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--az-text-secondary);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   ARCHITECTURE SECTION (How Autozip Works)
+   ========================================================================== */
+.az-section {
+  padding: 96px 28px;
+  border-bottom: 1px solid var(--az-border);
+}
+
+.az-container {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.az-section-header {
+  margin-bottom: 56px;
+}
+
+.az-section-title {
+  font-size: clamp(28px, 3.4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  margin-top: 12px;
+  margin-bottom: 16px;
+  line-height: 1.15;
+}
+
+.az-section-desc {
+  font-size: 16px;
+  color: var(--az-text-secondary);
+  max-width: 680px;
+  line-height: 1.6;
+}
+
+/* Architectural 2-Col Split */
+.az-arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .az-arch-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.az-arch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.az-arch-card {
+  padding: 24px;
+  background: var(--az-surface);
+  border: 1px solid var(--az-border);
+  border-radius: 3px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.az-arch-card:hover {
+  border-color: var(--az-border-bright);
+  background: var(--az-surface-alt);
+}
+
+.az-arch-number {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--az-text-muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.1em;
+}
+
+.az-arch-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.az-arch-body {
+  font-size: 14px;
+  color: var(--az-text-secondary);
+  line-height: 1.6;
+}
+
+/* Architecture Flow Tree on Right */
+.az-flow-box {
+  background: var(--az-surface);
+  border: 1px solid var(--az-border);
+  border-radius: 3px;
+  padding: 28px;
+  position: relative;
+}
+
+.az-flow-title {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--az-text-muted);
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--az-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.az-flow-step {
+  padding: 16px;
+  background: var(--az-surface-alt);
+  border: 1px solid var(--az-border-subtle);
+  border-radius: 2px;
+  margin-bottom: 8px;
+  font-family: var(--az-font-mono);
+  transition: border-color 0.2s ease;
+}
+
+.az-flow-step:hover {
+  border-color: var(--az-border-bright);
+}
+
+.az-flow-step-tag {
+  font-size: 10px;
+  color: var(--az-emerald);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.az-flow-step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.az-flow-step-desc {
+  font-size: 11px;
+  color: var(--az-text-muted);
+  line-height: 1.5;
+}
+
+.az-flow-connector {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  color: var(--az-text-muted);
+  text-align: center;
+  padding: 3px 0;
+  animation: azSignalFlow 2.5s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   ENGINE SECTION (Interactive Blueprint Switcher)
+   ========================================================================== */
+.az-blueprint-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.az-blueprint-tab-btn {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 18px;
+  background: var(--az-surface);
+  border: 1px solid var(--az-border);
+  color: var(--az-text-secondary);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.az-blueprint-tab-btn:hover {
+  color: #ffffff;
+  border-color: var(--az-border-bright);
+}
+
+.az-blueprint-tab-btn.active {
+  background: var(--az-surface-alt);
+  border-color: var(--az-border-bright);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.az-blueprint-card {
+  background: var(--az-surface);
+  border: 1px solid var(--az-border);
+  border-radius: 3px;
+  padding: 32px;
+  transition: border-color 0.2s ease;
+}
+
+.az-blueprint-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.az-blueprint-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.az-blueprint-desc {
+  font-size: 14px;
+  color: var(--az-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 24px;
+  max-width: 720px;
+}
+
+.az-blueprint-code {
+  background: var(--az-surface-alt);
+  border: 1px solid var(--az-border-subtle);
+  border-radius: 2px;
+  padding: 20px;
+  font-family: var(--az-font-mono);
+  font-size: 12px;
+  color: var(--az-text-code);
+  line-height: 1.65;
+}
+
+.az-blueprint-code .kwd {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.az-blueprint-code .str {
+  color: var(--az-emerald);
+}
+
+.az-blueprint-code .prop {
+  color: var(--az-text-secondary);
+}
+
+/* ==========================================================================
+   SPECIFICATIONS SECTION (Technical Comparison Matrix)
+   ========================================================================== */
+.az-specs-table-wrapper {
+  border: 1px solid var(--az-border);
+  background: var(--az-surface);
+  border-radius: 3px;
+  overflow-x: auto;
+}
+
+.az-specs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.az-specs-table th {
+  padding: 16px 20px;
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--az-text-muted);
+  background: var(--az-surface-alt);
+  border-bottom: 1px solid var(--az-border);
+  font-weight: 600;
+}
+
+.az-specs-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--az-border-subtle);
+  color: var(--az-text-secondary);
+  line-height: 1.5;
+  transition: background 0.15s ease;
+}
+
+.az-specs-table tr:hover td {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.az-specs-table tr:last-child td {
+  border-bottom: none;
+}
+
+.az-specs-table td.spec-name {
+  font-family: var(--az-font-mono);
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.az-specs-table td.spec-legacy {
+  color: var(--az-text-muted);
+}
+
+.az-specs-table td.spec-autozip {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   FAQ SECTION (Monochrome Accordion with Smooth Expansion)
+   ========================================================================== */
+.az-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 860px;
+}
+
+.az-faq-item {
+  border: 1px solid var(--az-border);
+  background: var(--az-surface);
+  border-radius: 3px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.az-faq-item:hover {
+  border-color: var(--az-border-bright);
+}
+
+.az-faq-trigger {
+  width: 100%;
+  padding: 20px 24px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.az-faq-toggle-char {
+  font-family: var(--az-font-mono);
+  font-size: 14px;
+  color: var(--az-text-muted);
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.az-faq-trigger:hover .az-faq-toggle-char {
+  color: #ffffff;
+}
+
+.az-faq-answer {
+  padding: 0 24px 20px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--az-text-secondary);
+  border-top: 1px solid var(--az-border-subtle);
+  padding-top: 14px;
+}
+
+/* ==========================================================================
+   FINAL CTA SECTION (Deployment Terminal)
+   ========================================================================== */
+.az-cta-box {
+  background: var(--az-surface);
+  border: 1px solid var(--az-border);
+  border-radius: 3px;
+  padding: 64px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 28px;
+  transition: border-color 0.25s ease;
+}
+
+.az-cta-box:hover {
+  border-color: var(--az-border-bright);
+}
+
+@media (max-width: 768px) {
+  .az-cta-box {
+    padding: 36px 24px;
+  }
+}
+
+.az-cta-title {
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.az-cta-desc {
+  font-size: 16px;
+  color: var(--az-text-secondary);
+  max-width: 620px;
+  line-height: 1.6;
+}
+
+.az-cta-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.az-cta-badges {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--az-border-subtle);
+  width: 100%;
+}
+
+.az-cta-badge {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  color: var(--az-text-muted);
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.az-footer {
+  padding: 48px 28px;
+  background: var(--az-bg);
+  border-top: 1px solid var(--az-border);
+}
+
+.az-footer-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.az-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.az-footer-copy {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  color: var(--az-text-muted);
+}
+
+.az-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.az-footer-link {
+  font-family: var(--az-font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--az-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.az-footer-link:hover {
+  color: #ffffff;
+}
+
+/* Mobile Responsiveness adjustments */
+@media (max-width: 768px) {
+  .az-nav-menu {
+    display: none;
+  }
+  
+  .az-hero-title {
+    font-size: 32px;
+  }
+}

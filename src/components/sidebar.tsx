@@ -19,10 +19,10 @@ export default function Sidebar() {
   return (
     <aside
       style={{
-        width: "220px",
+        width: "230px",
         minHeight: "100vh",
-        background: "var(--bg-sidebar)",
-        borderRight: "1px solid var(--border-subtle)",
+        background: "#0c0e12",
+        borderRight: "1px solid #1f242c",
         display: "flex",
         flexDirection: "column",
         flexShrink: 0,
@@ -31,24 +31,64 @@ export default function Sidebar() {
       {/* Brand */}
       <div
         style={{
-          padding: "20px 20px 16px",
-          borderBottom: "1px solid var(--border-subtle)",
+          padding: "20px",
+          borderBottom: "1px solid #1f242c",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        <span
+        <Link
+          href="/"
           style={{
-            fontSize: "16px",
-            fontWeight: 700,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.3px",
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
           }}
         >
-          Autozip
-        </span>
+          <span
+            style={{
+              fontFamily: "var(--font-geist-mono, monospace)",
+              fontSize: "14px",
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              color: "#ffffff",
+            }}
+          >
+            AUTOZIP
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-geist-mono, monospace)",
+              fontSize: "9px",
+              color: "#6b7280",
+              border: "1px solid #282f3a",
+              padding: "1px 5px",
+              borderRadius: "2px",
+            }}
+          >
+            V2.4
+          </span>
+        </Link>
+      </div>
+
+      {/* Nav Section Label */}
+      <div
+        style={{
+          padding: "16px 20px 6px",
+          fontFamily: "var(--font-geist-mono, monospace)",
+          fontSize: "10px",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          color: "#525966",
+        }}
+      >
+        OPERATIONAL NODES
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "12px 8px" }}>
+      <nav style={{ flex: 1, padding: "4px 8px" }}>
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -59,46 +99,77 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               style={{
-                display: "block",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
                 padding: "8px 12px",
-                marginBottom: "2px",
-                borderRadius: "var(--radius-md)",
-                fontSize: "13px",
+                marginBottom: "3px",
+                borderRadius: "2px",
+                fontSize: "12px",
+                fontFamily: "var(--font-geist-mono, monospace)",
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
-                background: isActive ? "var(--bg-surface)" : "transparent",
+                color: isActive ? "#ffffff" : "#8c96a5",
+                background: isActive ? "#181d24" : "transparent",
+                borderLeft: isActive ? "2px solid #10b981" : "2px solid transparent",
+                borderTop: "1px solid transparent",
+                borderRight: "1px solid transparent",
+                borderBottom: "1px solid transparent",
+                borderColor: isActive ? "#262e3a" : "transparent",
                 textDecoration: "none",
                 transition: "all 0.15s ease",
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.background = "var(--bg-surface-hover)";
-                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.background = "#14171d";
+                  e.currentTarget.style.color = "#ffffff";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.color = "#8c96a5";
                 }
               }}
             >
-              {item.label}
+              <span>{item.label}</span>
+              {isActive && (
+                <span
+                  style={{
+                    width: "4px",
+                    height: "4px",
+                    borderRadius: "50%",
+                    backgroundColor: "#10b981",
+                  }}
+                />
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Bottom */}
+      {/* System Status Node */}
       <div
         style={{
-          padding: "16px 20px",
-          borderTop: "1px solid var(--border-subtle)",
-          fontSize: "12px",
-          color: "var(--text-muted)",
+          padding: "14px 16px",
+          borderTop: "1px solid #1f242c",
+          fontFamily: "var(--font-geist-mono, monospace)",
+          fontSize: "10px",
+          color: "#6b7280",
+          background: "#090a0d",
         }}
       >
-        AI Business OS
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+          <span
+            style={{
+              width: "5px",
+              height: "5px",
+              borderRadius: "50%",
+              backgroundColor: "#10b981",
+            }}
+          />
+          <span style={{ color: "#d1d5db", fontWeight: 600 }}>US-EAST-CORE</span>
+        </div>
+        <div>POSTGRES // POOLED &amp; ACTIVE</div>
       </div>
     </aside>
   );

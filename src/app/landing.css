@@ -760,6 +760,13 @@ body {
   flex-shrink: 0;
 }
 
+.az-dash-ticker {
+  border-top: none;
+  border-bottom: 1px solid var(--az-border);
+  padding: 8px 0;
+  background-color: #080a0d;
+}
+
 .az-section {
   padding: 96px 28px;
   border-bottom: 1px solid var(--az-border);

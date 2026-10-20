@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Footer from "@/src/components/footer";
+import Ticker from "@/src/components/ticker";
 import "@/src/app/landing.css";
 
 export default function PricingPage() {
@@ -52,6 +53,9 @@ export default function PricingPage() {
           </p>
         </div>
       </section>
+
+      {/* ── CONTINUOUS MARQUEE TICKER ── */}
+      <Ticker />
 
       {/* ── PRICING NODES SECTION ── */}
       <section className="az-section">

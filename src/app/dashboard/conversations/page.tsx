@@ -219,10 +219,10 @@ export default function ConversationsPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={[{ value: "all", label: "All" }, { value: "open", label: "Open" }, { value: "closed", label: "Closed" }]} />
-            <FilterSelect label="Channel" value={channelFilter} onChange={setChannelFilter} options={[{ value: "all", label: "All" }, { value: "ai", label: "AI" }, { value: "email", label: "Email" }, { value: "whatsapp", label: "Slack" }]} />
+            <FilterSelect label="Channel" value={channelFilter} onChange={setChannelFilter} options={[{ value: "all", label: "All" }, { value: "ai", label: "AI Chat" }, { value: "whatsapp", label: "WhatsApp" }, { value: "email", label: "Email" }]} />
           </div>
           <button onClick={startNewConversation} style={{ padding: "7px 16px", borderRadius: "var(--radius-md)", border: "1px solid var(--accent)", background: "var(--accent)", color: "#fff", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
-            + New Conversation
+            + New Chat
           </button>
         </div>
 

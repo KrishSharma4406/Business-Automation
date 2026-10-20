@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Ticker from "./ticker";
 
 export default function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
   const [search, setSearch] = useState("");
@@ -20,7 +21,8 @@ export default function TopBar({ title, subtitle }: { title: string; subtitle?: 
   }, []);
 
   return (
-    <div className="az-dash-header">
+    <>
+      <div className="az-dash-header">
       {/* Left: Breadcrumbs & Node Hierarchy */}
       <div className="az-dash-header-title">
         <span className="az-tag az-tag-emerald" style={{ padding: "2px 6px", fontSize: "10px" }}>
@@ -68,7 +70,7 @@ export default function TopBar({ title, subtitle }: { title: string; subtitle?: 
           </span>
           <input
             type="text"
-            placeholder="Search telemetry..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="az-input-search"
@@ -94,10 +96,12 @@ export default function TopBar({ title, subtitle }: { title: string; subtitle?: 
             textDecoration: "none",
           }}
         >
-          <span>Root Landing</span>
+          <span>View Website</span>
           <span style={{ color: "var(--az-emerald)" }}>↗</span>
         </Link>
       </div>
     </div>
+    <Ticker className="az-dash-ticker" />
+  </>
   );
 }

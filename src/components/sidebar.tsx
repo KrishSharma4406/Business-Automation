@@ -80,9 +80,9 @@ export default function Sidebar() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <span style={{ color: "var(--az-emerald)", fontWeight: 700 }}>●</span>
-          <span>NODE: US-EAST-CORE</span>
+          <span>SYSTEM ONLINE</span>
         </div>
-        <span style={{ color: "var(--az-text-muted)" }}>42ms</span>
+        <span style={{ color: "var(--az-emerald)" }}>READY</span>
       </div>
 
       {/* Nav Section Label */}
@@ -99,8 +99,8 @@ export default function Sidebar() {
           justifyContent: "space-between",
         }}
       >
-        <span>OPERATIONAL MODULES</span>
-        <span style={{ fontSize: "9px", color: "var(--az-emerald)" }}>[7 NODES]</span>
+        <span>MAIN MENU</span>
+        <span style={{ fontSize: "9px", color: "var(--az-emerald)" }}>[7 PAGES]</span>
       </div>
 
       {/* Navigation Links */}
@@ -176,7 +176,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* System Telemetry Module Footer */}
+      {/* System Status Module Footer */}
       <div
         style={{
           margin: "12px",
@@ -189,18 +189,18 @@ export default function Sidebar() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-          <span style={{ color: "var(--az-text-muted)", textTransform: "uppercase" }}>ENGINE TELEMETRY</span>
+          <span style={{ color: "var(--az-text-muted)", textTransform: "uppercase" }}>SYSTEM STATUS</span>
           <span className="az-tag az-tag-emerald" style={{ padding: "1px 5px", fontSize: "9px" }}>
             ONLINE
           </span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px", color: "var(--az-text-secondary)" }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>NEON POSTGRES</span>
+            <span>DATABASE</span>
             <span style={{ color: "var(--az-emerald)" }}>CONNECTED</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>AUTONOMOUS OPS</span>
+            <span>AI ENGINE</span>
             <span style={{ color: "#ffffff" }}>ACTIVE</span>
           </div>
         </div>

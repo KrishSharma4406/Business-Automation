@@ -763,8 +763,12 @@ body {
 .az-dash-ticker {
   border-top: none;
   border-bottom: 1px solid var(--az-border);
-  padding: 8px 0;
+  padding: 6px 0;
   background-color: #080a0d;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .az-section {

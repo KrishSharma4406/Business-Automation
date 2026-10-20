@@ -80,188 +80,112 @@ export default function ConnectModal({
   }
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 50,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--bg-overlay)",
-        padding: "20px",
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "420px",
-          padding: "24px",
-          borderRadius: "var(--radius-lg)",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-default)",
-          animation: "fadeIn 0.2s ease-out",
-        }}
-      >
+    <div className="az-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="az-modal-box" style={{ maxWidth: "460px" }}>
         {/* Header */}
         <div
           style={{
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: "20px",
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--az-border)",
+            background: "rgba(22, 26, 32, 0.4)",
           }}
         >
           <div>
-            <p
-              style={{
-                fontSize: "15px",
-                fontWeight: 600,
-                color: "var(--text-primary)",
-              }}
-            >
-              {isUpdate ? "Update" : "Connect"} {provider.name}
-            </p>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "var(--text-muted)",
-                marginTop: "4px",
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span className="az-status-dot" />
+              <span style={{ fontSize: "14px", fontWeight: 700, color: "#ffffff", fontFamily: "var(--az-font-mono)" }}>
+                {isUpdate ? "UPDATE CREDENTIALS" : "CONNECT SERVICE"} // {provider.name.toUpperCase()}
+              </span>
+            </div>
+            <p style={{ fontSize: "12px", color: "var(--az-text-muted)", marginTop: "3px" }}>
               {provider.description}
             </p>
           </div>
 
           <button
             onClick={onClose}
-            style={{
-              padding: "4px 8px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--border-default)",
-              background: "transparent",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
+            className="az-btn-secondary"
+            style={{ padding: "4px 8px", fontSize: "11px", cursor: "pointer" }}
           >
-            Close
+            ✕
           </button>
         </div>
 
-        {/* Input */}
-        <label
-          style={{
-            display: "block",
-            fontSize: "12px",
-            fontWeight: 500,
-            color: "var(--text-secondary)",
-            marginBottom: "6px",
-          }}
-        >
-          API Key
-        </label>
+        {/* Content */}
+        <div style={{ padding: "20px" }}>
+          <div className="az-field" style={{ marginBottom: "12px" }}>
+            <label className="az-field-label">API Key or Token</label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={isUpdate ? "Enter updated API key..." : "Paste API key or access token..."}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !loading) submit();
+              }}
+              className="az-field-input"
+              autoFocus
+            />
+          </div>
 
-        <input
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder={isUpdate ? "Enter new API key" : "Enter API key"}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !loading) submit();
-          }}
-          style={{
-            boxSizing: "border-box",
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: "var(--radius-md)",
-            border: "1px solid var(--border-default)",
-            background: "var(--bg-input)",
-            color: "var(--text-primary)",
-            fontSize: "13px",
-            outline: "none",
-          }}
-          autoFocus
-        />
+          <p style={{ fontSize: "11px", color: "var(--az-text-muted)", lineHeight: 1.4 }}>
+            🔒 Credentials are encrypted with AES-256 before storage and only decrypted when dispatching automated actions.
+          </p>
 
-        <p
-          style={{
-            marginTop: "6px",
-            fontSize: "11px",
-            color: "var(--text-muted)",
-          }}
-        >
-          Credentials are encrypted with AES-256-GCM before storage
-        </p>
+          {/* Error */}
+          {error && (
+            <div
+              style={{
+                marginTop: "14px",
+                padding: "8px 12px",
+                borderRadius: "4px",
+                background: "rgba(239, 68, 68, 0.12)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                color: "var(--az-red)",
+                fontSize: "12px",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
-        {/* Error */}
-        {error && (
+          {/* Actions */}
           <div
             style={{
-              marginTop: "14px",
-              padding: "10px 14px",
-              borderRadius: "var(--radius-md)",
-              background: "var(--red-subtle)",
-              border: "1px solid rgba(231, 76, 60, 0.25)",
-              color: "var(--red)",
-              fontSize: "13px",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "10px",
+              marginTop: "20px",
+              paddingTop: "14px",
+              borderTop: "1px solid var(--az-border)",
             }}
           >
-            {error}
+            <button
+              onClick={onClose}
+              className="az-btn-secondary"
+              style={{ fontSize: "12px", padding: "6px 14px" }}
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={submit}
+              disabled={loading}
+              className="az-btn-primary"
+              style={{ fontSize: "12px", padding: "6px 18px" }}
+            >
+              {loading
+                ? isUpdate
+                  ? "Saving..."
+                  : "Connecting..."
+                : isUpdate
+                ? "Update Key"
+                : "Connect"}
+            </button>
           </div>
-        )}
-
-        {/* Actions */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "8px",
-            marginTop: "20px",
-          }}
-        >
-          <button
-            onClick={onClose}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border-default)",
-              background: "transparent",
-              color: "var(--text-secondary)",
-              fontSize: "13px",
-              fontWeight: 500,
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={submit}
-            disabled={loading}
-            style={{
-              padding: "8px 20px",
-              borderRadius: "var(--radius-md)",
-              border: "none",
-              background: "var(--accent)",
-              color: "#fff",
-              fontSize: "13px",
-              fontWeight: 600,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            {loading
-              ? isUpdate
-                ? "Updating..."
-                : "Connecting..."
-              : isUpdate
-              ? "Update"
-              : "Connect"}
-          </button>
         </div>
       </div>
     </div>

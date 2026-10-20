@@ -21,14 +21,14 @@ export default function TopBar({ title, subtitle }: { title: string; subtitle?: 
   }, []);
 
   return (
-    <>
-      <div className="az-dash-header">
-      {/* Left: Breadcrumbs & Node Hierarchy */}
-      <div className="az-dash-header-title">
-        <span className="az-tag az-tag-emerald" style={{ padding: "2px 6px", fontSize: "10px" }}>
-          <span className="az-status-dot" />
-          ACTIVE
-        </span>
+    <div style={{ position: "sticky", top: 0, zIndex: 40, width: "100%", background: "var(--az-surface)" }}>
+      <div className="az-dash-header" style={{ position: "relative", top: "auto" }}>
+        {/* Left: Breadcrumbs & Node Hierarchy */}
+        <div className="az-dash-header-title">
+          <span className="az-tag az-tag-emerald" style={{ padding: "2px 6px", fontSize: "10px" }}>
+            <span className="az-status-dot" />
+            ACTIVE
+          </span>
         <h1 className="az-dash-header-h1">
           {title}
         </h1>
@@ -102,6 +102,6 @@ export default function TopBar({ title, subtitle }: { title: string; subtitle?: 
       </div>
     </div>
     <Ticker className="az-dash-ticker" />
-  </>
+  </div>
   );
 }

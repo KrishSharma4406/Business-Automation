@@ -3,6 +3,7 @@
 import TopBar from "@/src/components/top-bar";
 import ConnectModal from "@/src/components/integrations/connect-modal";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 type Integration = {
   id: string;
@@ -16,12 +17,12 @@ type Integration = {
 };
 
 const providers = [
-  { provider: "GROK", name: "Grok", description: "AI and automation", color: "#6366f1" },
-  { provider: "GOOGLE", name: "Google", description: "Google Workspace", color: "#4285f4" },
-  { provider: "GMAIL", name: "Gmail", description: "Email automation", color: "#ea4335" },
-  { provider: "SLACK", name: "Slack", description: "Team communication", color: "#e01e5a" },
-  { provider: "WHATSAPP", name: "WhatsApp", description: "Customer communication", color: "#25d366" },
-  { provider: "STRIPE", name: "Stripe", description: "Payments", color: "#635bff" },
+  { provider: "WHATSAPP", name: "WhatsApp Cloud API", description: "Send automated messages and lead updates directly to customers", color: "#25d366" },
+  { provider: "GROK", name: "Grok / xAI", description: "Power high-speed AI conversations and lead triage reasoning", color: "#6366f1" },
+  { provider: "GMAIL", name: "Gmail Automation", description: "Send outbound email follow-ups and notifications to prospects", color: "#ea4335" },
+  { provider: "SLACK", name: "Slack Alerts", description: "Post real-time notifications to your internal team channels", color: "#e01e5a" },
+  { provider: "GOOGLE", name: "Google Calendar", description: "Schedule client appointments and sync demo bookings", color: "#4285f4" },
+  { provider: "STRIPE", name: "Stripe Billing", description: "Track invoices, payments, and client subscription statuses", color: "#635bff" },
 ];
 
 export default function IntegrationsPage() {
@@ -40,9 +41,9 @@ export default function IntegrationsPage() {
       const response = await fetch("/api/integrations");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to load integrations");
-      setIntegrations(data.integrations);
+      setIntegrations(data.integrations || []);
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err.message || "Failed to load integrations");
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ export default function IntegrationsPage() {
 
   function showSuccess(msg: string) {
     setSuccessMessage(msg);
-    setTimeout(() => setSuccessMessage(""), 3000);
+    setTimeout(() => setSuccessMessage(""), 3500);
   }
 
   function getIntegration(provider: string) {
@@ -63,7 +64,7 @@ export default function IntegrationsPage() {
 
   async function handleDisconnect(integration: Integration) {
     const confirmed = window.confirm(
-      `Disconnect ${integration.name}? The integration will be set to DISCONNECTED but not deleted.`
+      `Disconnect ${integration.name}? The service will be disabled until you reconnect.`
     );
     if (!confirmed) return;
     try {
@@ -78,7 +79,7 @@ export default function IntegrationsPage() {
       showSuccess(`${integration.name} disconnected`);
       await loadIntegrations();
     } catch (err: any) {
-      alert(err.message || "Something went wrong");
+      alert(err.message || "Failed to disconnect");
     } finally {
       setActionLoading(null);
     }
@@ -92,7 +93,7 @@ export default function IntegrationsPage() {
 
   async function handleDelete(integration: Integration) {
     const confirmed = window.confirm(
-      `Permanently delete the ${integration.name} integration? This cannot be undone.`
+      `Remove ${integration.name} integration and delete saved credentials? This cannot be undone.`
     );
     if (!confirmed) return;
     try {
@@ -100,10 +101,10 @@ export default function IntegrationsPage() {
       const response = await fetch(`/api/integrations/${integration.id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to delete");
-      showSuccess(`${integration.name} deleted`);
+      showSuccess(`${integration.name} removed`);
       await loadIntegrations();
     } catch (err: any) {
-      alert(err.message || "Something went wrong");
+      alert(err.message || "Failed to delete");
     } finally {
       setActionLoading(null);
     }
@@ -121,28 +122,78 @@ export default function IntegrationsPage() {
   const connectedCount = integrations.filter((i) => i.status === "CONNECTED").length;
 
   return (
-    <>
+    <div className="az-dash-page">
       <TopBar
-        title="Integrations"
-        subtitle={`${connectedCount} connected`}
+        title="App Integrations"
+        subtitle="Connect external services to automate messaging, AI, and workflow triggers"
       />
 
-      <div style={{ flex: 1, padding: "24px" }}>
+      <div className="az-dash-body">
+        {/* Top bar with back link & stats */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          <Link
+            href="/dashboard/settings"
+            className="az-btn-secondary"
+            style={{ fontSize: "11px", padding: "6px 12px", textDecoration: "none" }}
+          >
+            ← Back to Settings
+          </Link>
+          <span style={{ fontSize: "12px", color: "var(--az-text-muted)", fontFamily: "var(--az-font-mono)" }}>
+            STATUS: <strong style={{ color: "#ffffff" }}>{connectedCount}</strong> OF {providers.length} CONNECTED
+          </span>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="az-dash-stats">
+          <div className="az-dash-stat">
+            <div className="az-dash-stat-top">
+              <span className="az-dash-stat-label">Available Apps</span>
+              <span className="az-tag az-tag-blue">Catalog</span>
+            </div>
+            <div className="az-dash-stat-val">{providers.length}</div>
+            <div className="az-dash-stat-delta" style={{ color: "var(--az-text-muted)" }}>Supported platforms</div>
+          </div>
+
+          <div className="az-dash-stat">
+            <div className="az-dash-stat-top">
+              <span className="az-dash-stat-label">Connected</span>
+              <span className="az-tag az-tag-emerald">Active</span>
+            </div>
+            <div className="az-dash-stat-val" style={{ color: connectedCount > 0 ? "var(--az-emerald)" : "#ffffff" }}>
+              {connectedCount}
+            </div>
+            <div className="az-dash-stat-delta">
+              <span className="az-status-dot" /> Live &amp; transmitting
+            </div>
+          </div>
+
+          <div className="az-dash-stat">
+            <div className="az-dash-stat-top">
+              <span className="az-dash-stat-label">Security &amp; Encryption</span>
+              <span className="az-tag az-tag-emerald">AES-256</span>
+            </div>
+            <div className="az-dash-stat-val" style={{ fontSize: "20px" }}>Protected</div>
+            <div className="az-dash-stat-delta">All tokens encrypted in storage</div>
+          </div>
+        </div>
+
         {/* Success banner */}
         {successMessage && (
           <div
             style={{
-              marginBottom: "16px",
               padding: "10px 16px",
-              borderRadius: "var(--radius-md)",
-              background: "var(--green-subtle)",
-              border: "1px solid rgba(46, 204, 113, 0.25)",
-              color: "var(--green)",
-              fontSize: "13px",
-              animation: "fadeIn 0.2s ease-out",
+              borderRadius: "4px",
+              background: "rgba(16, 185, 129, 0.12)",
+              border: "1px solid rgba(16, 185, 129, 0.3)",
+              color: "var(--az-emerald)",
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
             }}
           >
-            {successMessage}
+            <span className="az-status-dot" />
+            <span>{successMessage}</span>
           </div>
         )}
 
@@ -150,38 +201,32 @@ export default function IntegrationsPage() {
         {error && (
           <div
             style={{
-              marginBottom: "16px",
               padding: "10px 16px",
-              borderRadius: "var(--radius-md)",
-              background: "var(--red-subtle)",
-              border: "1px solid rgba(231, 76, 60, 0.25)",
-              color: "var(--red)",
-              fontSize: "13px",
+              borderRadius: "4px",
+              background: "rgba(239, 68, 68, 0.12)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              color: "var(--az-red)",
+              fontSize: "12px",
             }}
           >
             {error}
           </div>
         )}
 
-        {/* Loading skeleton */}
+        {/* Grid of integrations */}
         {loading ? (
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
               gap: "16px",
             }}
           >
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                style={{
-                  height: "180px",
-                  borderRadius: "var(--radius-lg)",
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border-default)",
-                  animation: "pulse 1.5s infinite",
-                }}
+                className="az-dash-card"
+                style={{ height: "200px", opacity: 0.5, animation: "pulse 1.5s infinite" }}
               />
             ))}
           </div>
@@ -189,7 +234,7 @@ export default function IntegrationsPage() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
               gap: "16px",
             }}
           >
@@ -203,226 +248,145 @@ export default function IntegrationsPage() {
               return (
                 <div
                   key={provider.provider}
+                  className="az-dash-card"
                   style={{
-                    background: "var(--bg-surface)",
-                    border: `1px solid ${
-                      isConnected
-                        ? "rgba(46, 204, 113, 0.25)"
-                        : isError
-                        ? "rgba(231, 76, 60, 0.25)"
-                        : "var(--border-default)"
-                    }`,
-                    borderRadius: "var(--radius-lg)",
-                    padding: "20px",
-                    transition: "border-color 0.15s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border-active)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = isConnected
-                      ? "rgba(46, 204, 113, 0.25)"
+                    display: "flex",
+                    flexDirection: "column",
+                    borderColor: isConnected
+                      ? "rgba(16, 185, 129, 0.3)"
                       : isError
-                      ? "rgba(231, 76, 60, 0.25)"
-                      : "var(--border-default)";
+                      ? "rgba(239, 68, 68, 0.3)"
+                      : "var(--az-border)",
                   }}
                 >
                   {/* Header */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      marginBottom: "14px",
-                    }}
-                  >
-                    <div>
-                      <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
-                        {provider.name}
-                      </p>
-                      <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>
-                        {provider.description}
-                      </p>
+                  <div className="az-dash-card-header">
+                    <div className="az-dash-card-title">
+                      <span
+                        style={{
+                          width: "8px",
+                          height: "8px",
+                          borderRadius: "50%",
+                          background: isConnected ? "var(--az-emerald)" : isDisconnected ? "var(--az-amber)" : "#5a6578",
+                          boxShadow: isConnected ? "0 0 8px rgba(16, 185, 129, 0.5)" : "none",
+                        }}
+                      />
+                      <span>{provider.name}</span>
                     </div>
 
-                    {/* Status badge */}
                     <span
-                      style={{
-                        padding: "3px 8px",
-                        borderRadius: "10px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        background: isConnected
-                          ? "var(--green-subtle)"
+                      className={`az-tag ${
+                        isConnected
+                          ? "az-tag-emerald"
                           : isError
-                          ? "var(--red-subtle)"
+                          ? "az-tag-red"
                           : isDisconnected
-                          ? "var(--yellow-subtle)"
-                          : "rgba(113, 113, 122, 0.12)",
-                        color: isConnected
-                          ? "var(--green)"
-                          : isError
-                          ? "var(--red)"
-                          : isDisconnected
-                          ? "var(--yellow)"
-                          : "var(--text-muted)",
-                        border: `1px solid ${
-                          isConnected
-                            ? "rgba(46, 204, 113, 0.2)"
-                            : isError
-                            ? "rgba(231, 76, 60, 0.2)"
-                            : isDisconnected
-                            ? "rgba(240, 180, 41, 0.2)"
-                            : "rgba(113, 113, 122, 0.15)"
-                        }`,
-                      }}
+                          ? "az-tag-amber"
+                          : "az-tag-blue"
+                      }`}
+                      style={{ fontSize: "10px" }}
                     >
                       {isConnected
                         ? "Connected"
                         : isError
-                        ? "Error"
+                        ? "Attention"
                         : isDisconnected
-                        ? "Disconnected"
-                        : "Available"}
+                        ? "Paused"
+                        : "Ready to Add"}
                     </span>
                   </div>
 
-                  {/* Metadata */}
-                  {integration && (
-                    <div
-                      style={{
-                        marginBottom: "14px",
-                        padding: "10px 12px",
-                        borderRadius: "var(--radius-md)",
-                        background: "var(--bg-input)",
-                        border: "1px solid var(--border-subtle)",
-                        fontSize: "12px",
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        <span>Credentials</span>
-                        <span
+                  {/* Body */}
+                  <div className="az-dash-card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "16px" }}>
+                    <div>
+                      <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", lineHeight: 1.45, marginBottom: "14px" }}>
+                        {provider.description}
+                      </p>
+
+                      {integration && (
+                        <div
                           style={{
-                            color: integration.hasCredentials ? "var(--green)" : "var(--red)",
+                            padding: "8px 12px",
+                            borderRadius: "4px",
+                            background: "rgba(22, 26, 32, 0.6)",
+                            border: "1px solid var(--az-border)",
+                            fontSize: "11px",
+                            fontFamily: "var(--az-font-mono)",
+                            display: "flex",
+                            justifyContent: "space-between",
                           }}
                         >
-                          {integration.hasCredentials ? "Encrypted" : "Missing"}
-                        </span>
-                      </div>
-                      {integration.createdAt && (
-                        <div style={{ display: "flex", justifyContent: "space-between" }}>
-                          <span>Connected</span>
-                          <span>{formatDate(integration.createdAt)}</span>
+                          <span style={{ color: "var(--az-text-muted)" }}>STATUS</span>
+                          <span style={{ color: integration.hasCredentials ? "var(--az-emerald)" : "var(--az-red)" }}>
+                            {integration.hasCredentials ? "Credentials Active" : "Missing Key"}
+                          </span>
                         </div>
                       )}
                     </div>
-                  )}
 
-                  {/* Actions */}
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    {isConnected ? (
-                      <>
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: "8px", paddingTop: "12px", borderTop: "1px solid var(--az-border)" }}>
+                      {isConnected ? (
+                        <>
+                          <button
+                            onClick={() => handleDisconnect(integration!)}
+                            disabled={isLoading}
+                            className="az-btn-secondary"
+                            style={{ flex: 1, fontSize: "11px", padding: "6px 10px" }}
+                          >
+                            {isLoading ? "..." : "Pause"}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(integration!)}
+                            disabled={isLoading}
+                            className="az-btn-secondary"
+                            style={{
+                              fontSize: "11px",
+                              padding: "6px 10px",
+                              color: "var(--az-red)",
+                              borderColor: "rgba(239, 68, 68, 0.3)",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </>
+                      ) : isDisconnected || isError ? (
+                        <>
+                          <button
+                            onClick={() => handleReconnect(integration!)}
+                            disabled={isLoading}
+                            className="az-btn-primary"
+                            style={{ flex: 1, fontSize: "11px", padding: "6px 10px" }}
+                          >
+                            {isLoading ? "..." : "Reconnect"}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(integration!)}
+                            disabled={isLoading}
+                            className="az-btn-secondary"
+                            style={{
+                              fontSize: "11px",
+                              padding: "6px 10px",
+                              color: "var(--az-red)",
+                              borderColor: "rgba(239, 68, 68, 0.3)",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </>
+                      ) : (
                         <button
-                          onClick={() => handleDisconnect(integration!)}
-                          disabled={isLoading}
-                          style={{
-                            flex: 1,
-                            padding: "8px 12px",
-                            borderRadius: "var(--radius-md)",
-                            border: "1px solid rgba(240, 180, 41, 0.25)",
-                            background: "var(--yellow-subtle)",
-                            color: "var(--yellow)",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            opacity: isLoading ? 0.5 : 1,
-                            cursor: isLoading ? "not-allowed" : "pointer",
+                          onClick={() => {
+                            setEditIntegration(null);
+                            setConnectProvider(provider);
                           }}
+                          className="az-btn-primary"
+                          style={{ width: "100%", fontSize: "11px", padding: "7px 12px" }}
                         >
-                          {isLoading ? "..." : "Disconnect"}
+                          + Connect Service
                         </button>
-                        <button
-                          onClick={() => handleDelete(integration!)}
-                          disabled={isLoading}
-                          style={{
-                            padding: "8px 12px",
-                            borderRadius: "var(--radius-md)",
-                            border: "1px solid rgba(231, 76, 60, 0.25)",
-                            background: "var(--red-subtle)",
-                            color: "var(--red)",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            opacity: isLoading ? 0.5 : 1,
-                            cursor: isLoading ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </>
-                    ) : isDisconnected || isError ? (
-                      <>
-                        <button
-                          onClick={() => handleReconnect(integration!)}
-                          disabled={isLoading}
-                          style={{
-                            flex: 1,
-                            padding: "8px 12px",
-                            borderRadius: "var(--radius-md)",
-                            border: "none",
-                            background: "var(--accent)",
-                            color: "#fff",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            opacity: isLoading ? 0.5 : 1,
-                            cursor: isLoading ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          Reconnect
-                        </button>
-                        <button
-                          onClick={() => handleDelete(integration!)}
-                          disabled={isLoading}
-                          style={{
-                            padding: "8px 12px",
-                            borderRadius: "var(--radius-md)",
-                            border: "1px solid rgba(231, 76, 60, 0.25)",
-                            background: "var(--red-subtle)",
-                            color: "var(--red)",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            opacity: isLoading ? 0.5 : 1,
-                            cursor: isLoading ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setEditIntegration(null);
-                          setConnectProvider(provider);
-                        }}
-                        style={{
-                          flex: 1,
-                          padding: "8px 12px",
-                          borderRadius: "var(--radius-md)",
-                          border: "none",
-                          background: "var(--accent)",
-                          color: "#fff",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Connect
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -450,6 +414,6 @@ export default function IntegrationsPage() {
           }}
         />
       )}
-    </>
+    </div>
   );
 }

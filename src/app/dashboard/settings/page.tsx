@@ -5,169 +5,183 @@ import Link from "next/link";
 
 export default function SettingsPage() {
   return (
-    <>
-      <TopBar title="Settings" subtitle="Manage your business settings" />
+    <div className="az-dash-page">
+      <TopBar title="Settings" subtitle="Workspace preferences, team access, and integrations" />
 
-      <div style={{ flex: 1, padding: "24px" }}>
-        {/* Settings Sections */}
+      <div className="az-dash-body">
+        {/* Settings Grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
             gap: "16px",
           }}
         >
-          <SettingsCard
-            title="General"
-            description="Business name, timezone, and preferences"
-            items={[
-              { label: "Business Name", value: "Autozip" },
-              { label: "Timezone", value: "Asia/Kolkata (IST)" },
-              { label: "Language", value: "English" },
-            ]}
-          />
-
-          <SettingsCard
-            title="Notifications"
-            description="Email and push notification preferences"
-            items={[
-              { label: "Email Alerts", value: "Enabled" },
-              { label: "Lead Notifications", value: "Enabled" },
-              { label: "Weekly Reports", value: "Disabled" },
-            ]}
-          />
-
-          <SettingsCard
-            title="Team"
-            description="Team members and roles"
-            items={[
-              { label: "Members", value: "1" },
-              { label: "Roles", value: "Admin" },
-            ]}
-          />
-
-          <Link
-            href="/dashboard/settings/integrations"
-            style={{ textDecoration: "none" }}
-          >
-            <div
-              style={{
-                height: "100%",
-                background: "var(--bg-surface)",
-                border: "1px solid var(--border-default)",
-                borderRadius: "var(--radius-lg)",
-                padding: "20px",
-                transition: "border-color 0.15s ease",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-active)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-default)";
-              }}
-            >
-              <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
-                Integrations
-              </p>
-              <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "16px" }}>
-                Connect external tools and services
-              </p>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <SettingsRow label="Connected" value="View all" />
+          {/* General Workspace Card */}
+          <div className="az-dash-card">
+            <div className="az-dash-card-header">
+              <div className="az-dash-card-title">
+                <span className="az-status-dot" />
+                <span>Business Profile</span>
               </div>
+              <span className="az-tag az-tag-emerald">Active</span>
+            </div>
+            <div className="az-dash-card-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <p style={{ fontSize: "12px", color: "var(--az-text-muted)", marginBottom: "4px" }}>
+                Basic company details and regional timezone
+              </p>
+              <SettingsRow label="Company Name" value="Autozip Enterprise" />
+              <SettingsRow label="Timezone" value="Asia/Kolkata (IST)" />
+              <SettingsRow label="Default Language" value="English (US)" />
+            </div>
+          </div>
 
-              <div
+          {/* Integrations Card */}
+          <div className="az-dash-card" style={{ display: "flex", flexDirection: "column" }}>
+            <div className="az-dash-card-header">
+              <div className="az-dash-card-title">
+                <span className="az-status-dot" />
+                <span>Connected Apps</span>
+              </div>
+              <span className="az-tag az-tag-blue">Services</span>
+            </div>
+            <div className="az-dash-card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "12px" }}>
+              <div>
+                <p style={{ fontSize: "12px", color: "var(--az-text-muted)", marginBottom: "10px" }}>
+                  Connect WhatsApp, AI engines, Slack, and payment gateways
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <SettingsRow label="WhatsApp Cloud API" value="Ready to connect" />
+                  <SettingsRow label="Grok / OpenAI" value="Active" badge="emerald" />
+                </div>
+              </div>
+              <Link
+                href="/dashboard/settings/integrations"
+                className="az-btn-primary"
                 style={{
-                  marginTop: "16px",
-                  padding: "8px 14px",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--accent-subtle)",
-                  color: "var(--accent)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textDecoration: "none",
+                  marginTop: "8px",
                   fontSize: "12px",
-                  fontWeight: 600,
-                  textAlign: "center",
+                  padding: "8px 16px",
                 }}
               >
-                Manage Integrations
+                Manage Integrations →
+              </Link>
+            </div>
+          </div>
+
+          {/* Notifications Card */}
+          <div className="az-dash-card">
+            <div className="az-dash-card-header">
+              <div className="az-dash-card-title">
+                <span className="az-status-dot" />
+                <span>Notifications &amp; Alerts</span>
               </div>
             </div>
-          </Link>
+            <div className="az-dash-card-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <p style={{ fontSize: "12px", color: "var(--az-text-muted)", marginBottom: "4px" }}>
+                Configure email and instant alerts for new leads
+              </p>
+              <SettingsRow label="New Lead Alerts" value="Instant Email" />
+              <SettingsRow label="Daily Digest" value="Every morning at 9 AM" />
+              <SettingsRow label="Critical Errors" value="Enabled" badge="emerald" />
+            </div>
+          </div>
 
-          <SettingsCard
-            title="API"
-            description="API keys and webhooks"
-            items={[
-              { label: "API Key", value: "Not generated" },
-              { label: "Webhooks", value: "0 active" },
-            ]}
-          />
+          {/* Team Members Card */}
+          <div className="az-dash-card">
+            <div className="az-dash-card-header">
+              <div className="az-dash-card-title">
+                <span className="az-status-dot" />
+                <span>Team &amp; Access</span>
+              </div>
+            </div>
+            <div className="az-dash-card-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <p style={{ fontSize: "12px", color: "var(--az-text-muted)", marginBottom: "4px" }}>
+                Team member accounts and administrative permissions
+              </p>
+              <SettingsRow label="Workspace Owner" value="krish@autozip.dev" />
+              <SettingsRow label="Your Role" value="Administrator" badge="blue" />
+              <SettingsRow label="Seats Active" value="1 of 5 seats used" />
+            </div>
+          </div>
 
-          <SettingsCard
-            title="Security"
-            description="Password, 2FA, and session management"
-            items={[
-              { label: "Password", value: "Set" },
-              { label: "Two-Factor Auth", value: "Disabled" },
-              { label: "Active Sessions", value: "1" },
-            ]}
-          />
+          {/* API & Webhooks Card */}
+          <div className="az-dash-card">
+            <div className="az-dash-card-header">
+              <div className="az-dash-card-title">
+                <span className="az-status-dot" />
+                <span>API &amp; Webhooks</span>
+              </div>
+            </div>
+            <div className="az-dash-card-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <p style={{ fontSize: "12px", color: "var(--az-text-muted)", marginBottom: "4px" }}>
+                Inbound webhooks for receiving leads from websites &amp; forms
+              </p>
+              <SettingsRow label="Webhook Ingress URL" value="/api/webhooks/lead" />
+              <SettingsRow label="API Secret Key" value="••••••••••••••••" />
+              <SettingsRow label="Status" value="Live & Listening" badge="emerald" />
+            </div>
+          </div>
+
+          {/* Security Card */}
+          <div className="az-dash-card">
+            <div className="az-dash-card-header">
+              <div className="az-dash-card-title">
+                <span className="az-status-dot" />
+                <span>Account Security</span>
+              </div>
+            </div>
+            <div className="az-dash-card-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <p style={{ fontSize: "12px", color: "var(--az-text-muted)", marginBottom: "4px" }}>
+                Session authentication and security settings
+              </p>
+              <SettingsRow label="Password" value="Set & protected" />
+              <SettingsRow label="Active Session" value="Current Browser" badge="emerald" />
+              <SettingsRow label="Two-Factor Auth" value="Optional" />
+            </div>
+          </div>
         </div>
-      </div>
-    </>
-  );
-}
-
-function SettingsCard({
-  title,
-  description,
-  items,
-}: {
-  title: string;
-  description: string;
-  items: { label: string; value: string }[];
-}) {
-  return (
-    <div
-      style={{
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-default)",
-        borderRadius: "var(--radius-lg)",
-        padding: "20px",
-      }}
-    >
-      <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "4px" }}>
-        {title}
-      </p>
-      <p style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "16px" }}>
-        {description}
-      </p>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {items.map((item) => (
-          <SettingsRow key={item.label} label={item.label} value={item.value} />
-        ))}
       </div>
     </div>
   );
 }
 
-function SettingsRow({ label, value }: { label: string; value: string }) {
+function SettingsRow({
+  label,
+  value,
+  badge,
+}: {
+  label: string;
+  value: string;
+  badge?: "emerald" | "blue" | "red";
+}) {
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "8px 12px",
-        borderRadius: "var(--radius-md)",
-        background: "var(--bg-input)",
-        border: "1px solid var(--border-subtle)",
+        padding: "10px 14px",
+        borderRadius: "4px",
+        background: "rgba(22, 26, 32, 0.6)",
+        border: "1px solid var(--az-border)",
       }}
     >
-      <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>{label}</span>
-      <span style={{ fontSize: "12px", color: "var(--text-primary)", fontWeight: 500 }}>{value}</span>
+      <span style={{ fontSize: "12px", color: "var(--az-text-secondary)" }}>{label}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "12px", color: "#ffffff", fontWeight: 500, fontFamily: "var(--az-font-mono)" }}>
+          {value}
+        </span>
+        {badge && (
+          <span className={`az-tag az-tag-${badge}`} style={{ fontSize: "10px", padding: "1px 6px" }}>
+            {badge === "emerald" ? "OK" : "ADMIN"}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

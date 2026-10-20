@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Footer from "@/src/components/footer";
 import "@/src/app/landing.css";
 
 export default function PricingPage() {
@@ -203,21 +204,7 @@ export default function PricingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="az-footer">
-        <div className="az-footer-inner">
-          <div className="az-footer-brand">
-            <span className="az-brand-name">AUTOZIP</span>
-            <span className="az-footer-copy">Autonomous Business OS. All systems nominal.</span>
-          </div>
-
-          <div className="az-footer-links">
-            <Link href="/" className="az-footer-link">Home</Link>
-            <Link href="/#architecture" className="az-footer-link">Architecture</Link>
-            <Link href="/#engine" className="az-footer-link">Engine</Link>
-            <Link href="/auth/login" className="az-footer-link">Node Login</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }

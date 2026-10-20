@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -9,23 +8,20 @@ type CreateAutomationFormProps = {
 };
 
 const triggers = [
-  { value: "new_lead", label: "When a new lead arrives" },
+  { value: "new_lead", label: "When a new lead arrives (WhatsApp / Web)" },
   { value: "new_customer", label: "When a new customer is created" },
-  { value: "new_message", label: "When a new message arrives" },
-  { value: "lead_qualified", label: "When a lead is qualified" },
-  {
-    value: "conversation_received",
-    label: "When a conversation is received",
-  },
+  { value: "new_message", label: "When an inbound message arrives" },
+  { value: "lead_qualified", label: "When a lead is qualified (AI Score ≥ 80)" },
+  { value: "conversation_received", label: "When a conversation thread starts" },
 ];
 
 const actions = [
-  { value: "ai_qualify_lead", label: "Qualify lead with AI" },
-  { value: "generate_response", label: "Generate an AI response" },
-  { value: "send_email", label: "Send email" },
-  { value: "send_whatsapp", label: "Send WhatsApp message" },
-  { value: "notify_owner", label: "Notify business owner" },
-  { value: "create_task", label: "Create a task" },
+  { value: "ai_qualify_lead", label: "AI: Qualify lead intent & scoring" },
+  { value: "generate_response", label: "AI: Generate contextual response" },
+  { value: "send_whatsapp", label: "Dispatch: Send WhatsApp template" },
+  { value: "send_email", label: "Dispatch: Send SMTP email notification" },
+  { value: "notify_owner", label: "Alert: Notify workspace operator" },
+  { value: "create_task", label: "Pipeline: Create Neon CRM task" },
 ];
 
 export default function CreateAutomationForm({
@@ -62,7 +58,7 @@ export default function CreateAutomationForm({
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || "Failed to create automation");
+        throw new Error(result.error || "Failed to create automation rule");
       }
 
       onCreated();
@@ -76,212 +72,157 @@ export default function CreateAutomationForm({
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: "var(--radius-md)",
-    border: "1px solid var(--border-default)",
-    background: "var(--bg-input)",
-    color: "var(--text-primary)",
-    fontSize: "13px",
-    boxSizing: "border-box",
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    marginBottom: "6px",
-    fontSize: "12px",
-    fontWeight: 600,
-    color: "var(--text-secondary)",
-  };
-
   return (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        background: "rgba(0,0,0,0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "20px",
-      }}
+      className="az-modal-overlay"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !loading) onClose();
       }}
     >
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          width: "100%",
-          maxWidth: "520px",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          padding: "24px",
-          borderRadius: "var(--radius-lg)",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-default)",
-          color: "var(--text-primary)",
-        }}
-      >
+      <div className="az-modal-box">
         <div
           style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--az-border)",
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: "22px",
+            justifyContent: "space-between",
           }}
         >
-          <div>
-            <h2 style={{ fontSize: "19px", fontWeight: 700 }}>
-              Create Automation
-            </h2>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "var(--text-muted)",
-                marginTop: "5px",
-              }}
-            >
-              Configure a business workflow.
-            </p>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
+              <span className="az-status-dot" />
+              RULE BLUEPRINT
+            </span>
+            <h3 style={{ fontFamily: "var(--az-font-mono)", fontSize: "13px", color: "#ffffff", textTransform: "uppercase" }}>
+              Deploy Autonomous Rule
+            </h3>
           </div>
 
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            aria-label="Close form"
-            style={{
-              border: "none",
-              background: "transparent",
-              color: "var(--text-secondary)",
-              fontSize: "22px",
-              cursor: "pointer",
-            }}
+            className="az-btn-secondary"
+            style={{ fontSize: "11px", padding: "4px 8px" }}
           >
-            ×
+            ✕ Close
           </button>
         </div>
 
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Automation name *</label>
-          <input
-            required
-            maxLength={100}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. AI Lead Qualification"
-            style={inputStyle}
-          />
-        </div>
+        <form onSubmit={handleSubmit} style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {error && (
+            <div className="az-auth-error">
+              [RULE_ERROR] {error}
+            </div>
+          )}
 
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Description</label>
-          <textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="Describe what this automation should do"
-            rows={3}
-            style={{ ...inputStyle, resize: "vertical" }}
-          />
-        </div>
+          <div className="az-field">
+            <label className="az-field-label">Rule Name // Blueprint Identifier</label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Instant WhatsApp Intake & Booking"
+              className="az-field-input"
+            />
+          </div>
 
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Trigger *</label>
-          <select
-            value={trigger}
-            onChange={(event) => setTrigger(event.target.value)}
-            style={inputStyle}
-          >
-            {triggers.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="az-field">
+            <label className="az-field-label">Trigger Condition // Event Ingress</label>
+            <select
+              value={trigger}
+              onChange={(e) => setTrigger(e.target.value)}
+              className="az-field-select"
+            >
+              {triggers.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div style={{ marginBottom: "16px" }}>
-          <label style={labelStyle}>Action *</label>
-          <select
-            value={action}
-            onChange={(event) => setAction(event.target.value)}
-            style={inputStyle}
-          >
-            {actions.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="az-field">
+            <label className="az-field-label">Autonomous Action // Execution Node</label>
+            <select
+              value={action}
+              onChange={(e) => setAction(e.target.value)}
+              className="az-field-select"
+            >
+              {actions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            fontSize: "13px",
-            color: "var(--text-secondary)",
-            marginBottom: "20px",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(event) => setEnabled(event.target.checked)}
-          />
-          Enable this automation immediately
-        </label>
+          <div className="az-field">
+            <label className="az-field-label">Operational Synopsis // Description</label>
+            <textarea
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Evaluates commercial intent upon receiving message and sends scheduling link."
+              className="az-field-textarea"
+            />
+          </div>
 
-        {error && (
-          <p
-            role="alert"
+          <div
             style={{
-              color: "#ef4444",
-              fontSize: "13px",
-              marginBottom: "16px",
+              padding: "12px",
+              background: "var(--az-surface-alt)",
+              border: "1px solid var(--az-border)",
+              borderRadius: "4px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            {error}
-          </p>
-        )}
+            <div>
+              <div style={{ fontFamily: "var(--az-font-mono)", fontSize: "12px", color: "#ffffff", fontWeight: 600 }}>
+                Initial State
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--az-text-secondary)" }}>
+                Start this automation immediately upon provisioning
+              </div>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => setEnabled(e.target.checked)}
+                style={{ accentColor: "var(--az-emerald)", width: "16px", height: "16px" }}
+              />
+              <span className={enabled ? "az-tag az-tag-emerald" : "az-tag"} style={{ fontSize: "10px" }}>
+                {enabled ? "ACTIVE" : "PAUSED"}
+              </span>
+            </label>
+          </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            style={{
-              padding: "9px 16px",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border-default)",
-              background: "var(--bg-surface)",
-              color: "var(--text-primary)",
-            }}
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: "9px 16px",
-              borderRadius: "var(--radius-md)",
-              border: "none",
-              background: "var(--accent)",
-              color: "#fff",
-              fontWeight: 600,
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? "Creating..." : "Create Automation"}
-          </button>
-        </div>
-      </form>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="az-btn-secondary"
+              style={{ fontSize: "12px", padding: "8px 16px" }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="az-btn-primary"
+              style={{ fontSize: "12px", padding: "8px 22px" }}
+            >
+              {loading ? "Deploying Blueprint..." : "Deploy Automation Node"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

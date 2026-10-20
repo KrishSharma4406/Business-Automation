@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { db } from "@/src/prisma/db";
 
 export async function getWorkspaceForUser(
@@ -25,8 +26,22 @@ export async function getBusinessForUser(
 
   if (business) return business;
 
-  return await db.orm.public.Business
+  const fallback = await db.orm.public.Business
     .select("id", "name", "slug")
     .orderBy((business) => business.createdAt.asc())
     .first();
+
+  if (fallback) return fallback;
+
+  try {
+    return await db.orm.public.Business.create({
+      id: crypto.randomUUID(),
+      ownerId: userId,
+      name: "Autozip Workspace",
+      slug: `workspace-${userId.slice(0, 8)}`,
+    });
+  } catch (error) {
+    console.error("Failed to auto-provision business:", error);
+    return null;
+  }
 }

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Conversations", href: "/dashboard/conversations" },
-  { label: "Customers", href: "/dashboard/customers" },
-  { label: "Leads", href: "/dashboard/leads" },
-  { label: "Automations", href: "/dashboard/automation" },
-  { label: "Settings", href: "/dashboard/settings" },
-  { label: "Integrations", href: "/dashboard/settings/integrations" },
+  { id: "01", label: "Dashboard", href: "/dashboard", desc: "Overview & Telemetry" },
+  { id: "02", label: "Conversations", href: "/dashboard/conversations", desc: "AI Omnichannel Chat" },
+  { id: "03", label: "Customers", href: "/dashboard/customers", desc: "Directory & Profiles" },
+  { id: "04", label: "Leads", href: "/dashboard/leads", desc: "AI Scoring & Ingress" },
+  { id: "05", label: "Automations", href: "/dashboard/automation", desc: "Deterministic Rules" },
+  { id: "06", label: "Settings", href: "/dashboard/settings", desc: "Workspace Node Config" },
+  { id: "07", label: "Integrations", href: "/dashboard/settings/integrations", desc: "API Gateways & Sync" },
 ];
 
 export default function Sidebar() {
@@ -19,20 +19,21 @@ export default function Sidebar() {
   return (
     <aside
       style={{
-        width: "230px",
+        width: "250px",
         minHeight: "100vh",
-        background: "#0c0e12",
-        borderRight: "1px solid #1f242c",
+        background: "var(--az-surface)",
+        borderRight: "1px solid var(--az-border)",
         display: "flex",
         flexDirection: "column",
         flexShrink: 0,
+        zIndex: 50,
       }}
     >
-      {/* Brand */}
+      {/* Brand Header */}
       <div
         style={{
-          padding: "20px",
-          borderBottom: "1px solid #1f242c",
+          padding: "18px 20px",
+          borderBottom: "1px solid var(--az-border)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -40,55 +41,70 @@ export default function Sidebar() {
       >
         <Link
           href="/"
-          style={{
-            textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
+          className="az-brand"
+          style={{ textDecoration: "none" }}
         >
-          <span
-            style={{
-              fontFamily: "var(--font-geist-mono, monospace)",
-              fontSize: "14px",
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              color: "#ffffff",
-            }}
-          >
-            AUTOZIP
-          </span>
-          <span
-            style={{
-              fontFamily: "var(--font-geist-mono, monospace)",
-              fontSize: "9px",
-              color: "#6b7280",
-              border: "1px solid #282f3a",
-              padding: "1px 5px",
-              borderRadius: "2px",
-            }}
-          >
-            V2.4
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span
+              style={{
+                fontFamily: "var(--az-font-mono)",
+                fontSize: "15px",
+                fontWeight: 800,
+                letterSpacing: "0.06em",
+                color: "#ffffff",
+              }}
+            >
+              AUTOZIP
+            </span>
+            <span className="az-brand-spec" style={{ fontSize: "9px", padding: "1px 5px" }}>
+              SYS.VER 2.4
+            </span>
+          </div>
         </Link>
+        <span className="az-status-dot" title="Runtime Active" />
+      </div>
+
+      {/* Operational Node Status Banner */}
+      <div
+        style={{
+          padding: "10px 16px",
+          background: "rgba(16, 185, 129, 0.05)",
+          borderBottom: "1px solid var(--az-border-subtle)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          fontSize: "10px",
+          fontFamily: "var(--az-font-mono)",
+          color: "var(--az-text-secondary)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ color: "var(--az-emerald)", fontWeight: 700 }}>●</span>
+          <span>NODE: US-EAST-CORE</span>
+        </div>
+        <span style={{ color: "var(--az-text-muted)" }}>42ms</span>
       </div>
 
       {/* Nav Section Label */}
       <div
         style={{
-          padding: "16px 20px 6px",
-          fontFamily: "var(--font-geist-mono, monospace)",
+          padding: "16px 20px 8px",
+          fontFamily: "var(--az-font-mono)",
           fontSize: "10px",
           textTransform: "uppercase",
           letterSpacing: "0.08em",
-          color: "#525966",
+          color: "var(--az-text-muted)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
-        OPERATIONAL NODES
+        <span>OPERATIONAL MODULES</span>
+        <span style={{ fontSize: "9px", color: "var(--az-emerald)" }}>[7 NODES]</span>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: "4px 8px" }}>
+      {/* Navigation Links */}
+      <nav style={{ flex: 1, padding: "4px 10px", display: "flex", flexDirection: "column", gap: "3px" }}>
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -102,74 +118,92 @@ export default function Sidebar() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "8px 12px",
-                marginBottom: "3px",
-                borderRadius: "2px",
+                padding: "9px 12px",
+                borderRadius: "4px",
+                fontFamily: "var(--az-font-mono)",
                 fontSize: "12px",
-                fontFamily: "var(--font-geist-mono, monospace)",
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? "#ffffff" : "#8c96a5",
-                background: isActive ? "#181d24" : "transparent",
-                borderLeft: isActive ? "2px solid #10b981" : "2px solid transparent",
-                borderTop: "1px solid transparent",
-                borderRight: "1px solid transparent",
-                borderBottom: "1px solid transparent",
-                borderColor: isActive ? "#262e3a" : "transparent",
+                color: isActive ? "#ffffff" : "var(--az-text-secondary)",
+                background: isActive ? "var(--az-surface-alt)" : "transparent",
+                borderLeft: isActive ? "2px solid var(--az-emerald)" : "2px solid transparent",
+                borderTop: "1px solid",
+                borderRight: "1px solid",
+                borderBottom: "1px solid",
+                borderColor: isActive ? "var(--az-border-bright)" : "transparent",
                 textDecoration: "none",
                 transition: "all 0.15s ease",
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.background = "#14171d";
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
                   e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.borderColor = "var(--az-border-subtle)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#8c96a5";
+                  e.currentTarget.style.color = "var(--az-text-secondary)";
+                  e.currentTarget.style.borderColor = "transparent";
                 }
               }}
             >
-              <span>{item.label}</span>
-              {isActive && (
+              <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
                 <span
                   style={{
-                    width: "4px",
-                    height: "4px",
+                    fontSize: "10px",
+                    color: isActive ? "var(--az-emerald)" : "var(--az-text-muted)",
+                    fontWeight: 700,
+                  }}
+                >
+                  {item.id}
+                </span>
+                <span>{item.label}</span>
+              </div>
+              {isActive ? (
+                <span
+                  style={{
+                    width: "5px",
+                    height: "5px",
                     borderRadius: "50%",
-                    backgroundColor: "#10b981",
+                    backgroundColor: "var(--az-emerald)",
+                    boxShadow: "0 0 8px var(--az-emerald)",
                   }}
                 />
-              )}
+              ) : null}
             </Link>
           );
         })}
       </nav>
 
-      {/* System Status Node */}
+      {/* System Telemetry Module Footer */}
       <div
         style={{
-          padding: "14px 16px",
-          borderTop: "1px solid #1f242c",
-          fontFamily: "var(--font-geist-mono, monospace)",
+          margin: "12px",
+          padding: "14px",
+          background: "var(--az-surface-alt)",
+          border: "1px solid var(--az-border)",
+          borderRadius: "4px",
+          fontFamily: "var(--az-font-mono)",
           fontSize: "10px",
-          color: "#6b7280",
-          background: "#090a0d",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-          <span
-            style={{
-              width: "5px",
-              height: "5px",
-              borderRadius: "50%",
-              backgroundColor: "#10b981",
-            }}
-          />
-          <span style={{ color: "#d1d5db", fontWeight: 600 }}>US-EAST-CORE</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+          <span style={{ color: "var(--az-text-muted)", textTransform: "uppercase" }}>ENGINE TELEMETRY</span>
+          <span className="az-tag az-tag-emerald" style={{ padding: "1px 5px", fontSize: "9px" }}>
+            ONLINE
+          </span>
         </div>
-        <div>POSTGRES // POOLED &amp; ACTIVE</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", color: "var(--az-text-secondary)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>NEON POSTGRES</span>
+            <span style={{ color: "var(--az-emerald)" }}>CONNECTED</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>AUTONOMOUS OPS</span>
+            <span style={{ color: "#ffffff" }}>ACTIVE</span>
+          </div>
+        </div>
       </div>
     </aside>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Footer from "@/src/components/footer";
 import "./landing.css";
 
 /* ==========================================================================
@@ -792,21 +793,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="az-footer">
-        <div className="az-footer-inner">
-          <div className="az-footer-brand">
-            <span className="az-brand-name">AUTOZIP</span>
-            <span className="az-footer-copy">Autonomous Business OS. All systems nominal.</span>
-          </div>
-
-          <div className="az-footer-links">
-            <a href="#architecture" className="az-footer-link">Architecture</a>
-            <a href="#engine" className="az-footer-link">Engine</a>
-            <a href="#specs" className="az-footer-link">Specifications</a>
-            <Link href="/auth/login" className="az-footer-link">Node Login</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
     </main>
   );

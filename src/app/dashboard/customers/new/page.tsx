@@ -3,6 +3,7 @@
 import TopBar from "@/src/components/top-bar";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function NewCustomerPage() {
   const router = useRouter();
@@ -12,159 +13,101 @@ export default function NewCustomerPage() {
     event.preventDefault();
     setLoading(true);
 
-    // Placeholder for API call
     setTimeout(() => {
       setLoading(false);
       router.push("/dashboard/customers");
-    }, 500);
+    }, 600);
   }
 
   return (
-    <>
-      <TopBar title="New Customer" subtitle="Add a new customer" />
+    <div className="az-dash-page">
+      <TopBar title="Provision Customer" subtitle="Initialize New Commercial Account Node" />
 
-      <div style={{ flex: 1, padding: "24px", maxWidth: "640px" }}>
-        <div
-          style={{
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border-default)",
-            borderRadius: "var(--radius-lg)",
-          }}
-        >
-          <div
-            style={{
-              padding: "14px 20px",
-              borderBottom: "1px solid var(--border-default)",
-            }}
-          >
-            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)" }}>
-              Customer Details
-            </span>
+      <div className="az-dash-body" style={{ maxWidth: "760px" }}>
+        <div className="az-dash-card">
+          <div className="az-dash-card-header">
+            <div className="az-dash-card-title">
+              <span className="az-status-dot" />
+              <span>OPERATOR ACTION // PROVISION ACCOUNT</span>
+            </div>
+            <Link
+              href="/dashboard/customers"
+              className="az-btn-secondary"
+              style={{ fontSize: "11px", padding: "4px 8px", textDecoration: "none" }}
+            >
+              ← Back to Directory
+            </Link>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-              <FormField label="Name" name="name" placeholder="Full name" required />
-              <FormField label="Email" name="email" type="email" placeholder="email@example.com" required />
-              <FormField label="Phone" name="phone" placeholder="Phone number" />
-              <FormField label="Company" name="company" placeholder="Company name" />
+          <form onSubmit={handleSubmit} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "18px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div className="az-field">
+                <label className="az-field-label">Customer Legal / Full Name</label>
+                <input name="name" placeholder="Dr. Vikram Sen" required className="az-field-input" />
+              </div>
+              <div className="az-field">
+                <label className="az-field-label">Commercial Identity // Email</label>
+                <input name="email" type="email" placeholder="vikram@cliniccorp.in" required className="az-field-input" />
+              </div>
+              <div className="az-field">
+                <label className="az-field-label">WhatsApp Channel // Phone</label>
+                <input name="phone" placeholder="+91 98402 00000" className="az-field-input" />
+              </div>
+              <div className="az-field">
+                <label className="az-field-label">Organization // Entity</label>
+                <input name="company" placeholder="Sen Healthcare Systems" className="az-field-input" />
+              </div>
             </div>
 
-            <div style={{ marginBottom: "16px" }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  fontWeight: 500,
-                  color: "var(--text-secondary)",
-                  marginBottom: "6px",
-                }}
-              >
-                Notes
-              </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div className="az-field">
+                <label className="az-field-label">Deployment Tier</label>
+                <select name="tier" className="az-field-select" defaultValue="Enterprise">
+                  <option value="Enterprise">Enterprise Node (50+ seats, custom SLA)</option>
+                  <option value="Growth">Growth Node (15 seats, priority queue)</option>
+                  <option value="Starter">Starter Node (Standard ingress)</option>
+                </select>
+              </div>
+              <div className="az-field">
+                <label className="az-field-label">Primary Ingress Channel</label>
+                <select name="channel" className="az-field-select" defaultValue="WhatsApp Cloud API">
+                  <option value="WhatsApp Cloud API">WhatsApp Cloud API</option>
+                  <option value="REST Webhook">REST Webhook Core</option>
+                  <option value="SMTP Relay">SMTP Relay &amp; Email</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="az-field">
+              <label className="az-field-label">Operator Notes &amp; Routing Specifications</label>
               <textarea
                 name="notes"
-                rows={3}
-                placeholder="Additional notes..."
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "var(--radius-md)",
-                  border: "1px solid var(--border-default)",
-                  background: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                  fontSize: "13px",
-                  outline: "none",
-                  resize: "vertical",
-                }}
+                rows={4}
+                placeholder="Custom CRM database webhook hook at https://api.client.com/v1/intake..."
+                className="az-field-textarea"
               />
             </div>
 
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "12px", paddingTop: "16px", borderTop: "1px solid var(--az-border)" }}>
+              <Link
+                href="/dashboard/customers"
+                className="az-btn-secondary"
+                style={{ fontSize: "12px", padding: "8px 16px", textDecoration: "none" }}
+              >
+                Cancel
+              </Link>
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  padding: "8px 20px",
-                  borderRadius: "var(--radius-md)",
-                  border: "none",
-                  background: "var(--accent)",
-                  color: "#fff",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  opacity: loading ? 0.6 : 1,
-                  cursor: loading ? "not-allowed" : "pointer",
-                }}
+                className="az-btn-primary"
+                style={{ fontSize: "12px", padding: "8px 24px" }}
               >
-                {loading ? "Creating..." : "Create Customer"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard/customers")}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "var(--radius-md)",
-                  border: "1px solid var(--border-default)",
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
+                {loading ? "Provisioning Node..." : "Provision Account Node"}
               </button>
             </div>
           </form>
         </div>
       </div>
-    </>
-  );
-}
-
-function FormField({
-  label,
-  name,
-  type = "text",
-  placeholder,
-  required = false,
-}: {
-  label: string;
-  name: string;
-  type?: string;
-  placeholder?: string;
-  required?: boolean;
-}) {
-  return (
-    <div>
-      <label
-        style={{
-          display: "block",
-          fontSize: "12px",
-          fontWeight: 500,
-          color: "var(--text-secondary)",
-          marginBottom: "6px",
-        }}
-      >
-        {label}
-      </label>
-      <input
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        required={required}
-        style={{
-          width: "100%",
-          padding: "10px 12px",
-          borderRadius: "var(--radius-md)",
-          border: "1px solid var(--border-default)",
-          background: "var(--bg-input)",
-          color: "var(--text-primary)",
-          fontSize: "13px",
-          outline: "none",
-        }}
-      />
     </div>
   );
 }

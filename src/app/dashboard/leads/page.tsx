@@ -142,20 +142,20 @@ export default function LeadsPage() {
 
   return (
     <div className="az-dash-page">
-      <TopBar title="Lead Pipeline" subtitle="Sub-400ms Real-Time AI Scoring &amp; Ingress" />
+      <TopBar title="Leads & Inquiries" subtitle="Track inbound leads, AI qualification scores, and automated replies" />
 
       <div className="az-dash-body">
         {/* Pipeline Telemetry Metrics */}
         <div className="az-dash-stats">
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">TOTAL INGESTED</span>
+              <span className="az-dash-stat-label">TOTAL LEADS</span>
               <span className="az-tag" style={{ fontSize: "9px" }}>ALL TIME</span>
             </div>
             <div className="az-dash-stat-val">{leads.length}</div>
             <div className="az-dash-stat-delta">
               <span>●</span>
-              <span>Live Neon DB sync</span>
+              <span>Synced with database</span>
             </div>
           </div>
 
@@ -167,31 +167,31 @@ export default function LeadsPage() {
             <div className="az-dash-stat-val" style={{ color: "var(--az-emerald)" }}>{qualifiedCount}</div>
             <div className="az-dash-stat-delta">
               <span>↑</span>
-              <span>{leads.length > 0 ? Math.round((qualifiedCount / leads.length) * 100) : 0}% conversion yield</span>
+              <span>{leads.length > 0 ? Math.round((qualifiedCount / leads.length) * 100) : 0}% high-intent rate</span>
             </div>
           </div>
 
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">URGENT PRIORITY</span>
-              <span className="az-tag az-tag-amber" style={{ fontSize: "9px" }}>LOCK THREAD</span>
+              <span className="az-dash-stat-label">URGENT LEADS</span>
+              <span className="az-tag az-tag-amber" style={{ fontSize: "9px" }}>HIGH PRIORITY</span>
             </div>
             <div className="az-dash-stat-val" style={{ color: "var(--az-amber)" }}>{urgentCount}</div>
             <div className="az-dash-stat-delta" style={{ color: "var(--az-amber)" }}>
               <span>!</span>
-              <span>Immediate operator follow-up</span>
+              <span>Needs quick follow-up</span>
             </div>
           </div>
 
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
               <span className="az-dash-stat-label">AVERAGE AI SCORE</span>
-              <span className="az-tag" style={{ fontSize: "9px" }}>INTENT EVAL</span>
+              <span className="az-tag" style={{ fontSize: "9px" }}>AVG SCORE</span>
             </div>
             <div className="az-dash-stat-val">{avgScore}<span style={{ fontSize: "14px", color: "var(--az-text-muted)" }}>/100</span></div>
             <div className="az-dash-stat-delta">
               <span>●</span>
-              <span>Model: Grok &amp; Neon Embeddings</span>
+              <span>Scored automatically by AI</span>
             </div>
           </div>
         </div>
@@ -219,14 +219,14 @@ export default function LeadsPage() {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="az-select-cyber"
               >
-                <option value="date">Date Ingested</option>
-                <option value="score">AI Intent Score</option>
+                <option value="date">Newest First</option>
+                <option value="score">Highest AI Score</option>
                 <option value="priority">Priority Level</option>
               </select>
             </div>
 
             <span className="az-tag" style={{ fontSize: "11px" }}>
-              {sortedLeads.length} RECORD{sortedLeads.length === 1 ? "" : "S"}
+              {sortedLeads.length} LEAD{sortedLeads.length === 1 ? "" : "S"}
             </span>
           </div>
 
@@ -237,12 +237,12 @@ export default function LeadsPage() {
               className="az-btn-primary"
               style={{ fontSize: "12px", padding: "8px 16px" }}
             >
-              + Ingest New Lead
+              + Add New Lead
             </button>
           </div>
         </div>
 
-        {/* Ingest Lead Modal */}
+        {/* Add Lead Modal */}
         {showForm && (
           <div className="az-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
             <div className="az-modal-box">
@@ -258,10 +258,10 @@ export default function LeadsPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
                     <span className="az-status-dot" />
-                    INGRESS PORT
+                    NEW LEAD
                   </span>
                   <h3 style={{ fontFamily: "var(--az-font-mono)", fontSize: "13px", color: "#ffffff", textTransform: "uppercase" }}>
-                    Manual Lead Ingestion
+                    Add a New Lead
                   </h3>
                 </div>
                 <button
@@ -277,29 +277,29 @@ export default function LeadsPage() {
               <form onSubmit={handleSubmit} style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                   <div className="az-field">
-                    <label className="az-field-label">Lead Identity // Name</label>
+                    <label className="az-field-label">Full Name</label>
                     <input name="name" placeholder="Rahul Sharma" required className="az-field-input" />
                   </div>
                   <div className="az-field">
-                    <label className="az-field-label">Contact // Email</label>
+                    <label className="az-field-label">Email Address</label>
                     <input name="email" type="email" placeholder="rahul@example.com" className="az-field-input" />
                   </div>
                   <div className="az-field">
-                    <label className="az-field-label">WhatsApp // Phone</label>
+                    <label className="az-field-label">Phone / WhatsApp</label>
                     <input name="phone" placeholder="+91 98402 11982" className="az-field-input" />
                   </div>
                   <div className="az-field">
-                    <label className="az-field-label">Organization // Company</label>
+                    <label className="az-field-label">Company / Business Name</label>
                     <input name="company" placeholder="Horizon Technologies" className="az-field-input" />
                   </div>
                 </div>
 
                 <div className="az-field">
-                  <label className="az-field-label">Intent Payload // Requirement Message</label>
+                  <label className="az-field-label">Customer's Message / Request</label>
                   <textarea
                     name="message"
                     rows={4}
-                    placeholder="We need automated dental clinic reminders and WhatsApp intake with custom SLA..."
+                    placeholder="Describe what the customer is asking for, requirements, budget, timeline..."
                     className="az-field-textarea"
                   />
                 </div>
@@ -319,7 +319,7 @@ export default function LeadsPage() {
                     className="az-btn-primary"
                     style={{ fontSize: "12px", padding: "8px 20px" }}
                   >
-                    {loading ? "AI Evaluating..." : "Ingest & Qualify Lead"}
+                    {loading ? "Evaluating with AI..." : "Save & Qualify with AI"}
                   </button>
                 </div>
               </form>
@@ -333,7 +333,7 @@ export default function LeadsPage() {
             <div className="az-dash-card-header" style={{ background: "rgba(16, 185, 129, 0.08)" }}>
               <div className="az-dash-card-title" style={{ color: "var(--az-emerald)" }}>
                 <span className="az-status-dot" />
-                <span>AI QUALIFICATION COMPLETE // LEAD QUALIFIED</span>
+                <span>AI QUALIFICATION COMPLETE</span>
               </div>
               <button
                 type="button"
@@ -346,19 +346,19 @@ export default function LeadsPage() {
             <div className="az-dash-card-body">
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "12px", marginBottom: "16px" }}>
                 <div style={{ background: "var(--az-surface-alt)", padding: "12px", borderRadius: "4px", border: "1px solid var(--az-border)" }}>
-                  <div style={{ fontSize: "10px", fontFamily: "var(--az-font-mono)", color: "var(--az-text-muted)" }}>EVALUATION SCORE</div>
+                  <div style={{ fontSize: "10px", fontFamily: "var(--az-font-mono)", color: "var(--az-text-muted)" }}>AI SCORE</div>
                   <div style={{ fontSize: "20px", fontFamily: "var(--az-font-mono)", fontWeight: 700, color: "var(--az-emerald)", marginTop: "4px" }}>
                     {result.lead.aiScore ?? 0} / 100
                   </div>
                 </div>
                 <div style={{ background: "var(--az-surface-alt)", padding: "12px", borderRadius: "4px", border: "1px solid var(--az-border)" }}>
-                  <div style={{ fontSize: "10px", fontFamily: "var(--az-font-mono)", color: "var(--az-text-muted)" }}>PIPELINE PRIORITY</div>
+                  <div style={{ fontSize: "10px", fontFamily: "var(--az-font-mono)", color: "var(--az-text-muted)" }}>PRIORITY</div>
                   <div style={{ fontSize: "16px", fontFamily: "var(--az-font-mono)", fontWeight: 700, color: "#ffffff", marginTop: "6px", textTransform: "uppercase" }}>
                     {result.lead.priority}
                   </div>
                 </div>
                 <div style={{ background: "var(--az-surface-alt)", padding: "12px", borderRadius: "4px", border: "1px solid var(--az-border)" }}>
-                  <div style={{ fontSize: "10px", fontFamily: "var(--az-font-mono)", color: "var(--az-text-muted)" }}>INGRESS CHANNEL</div>
+                  <div style={{ fontSize: "10px", fontFamily: "var(--az-font-mono)", color: "var(--az-text-muted)" }}>SOURCE</div>
                   <div style={{ fontSize: "16px", fontFamily: "var(--az-font-mono)", fontWeight: 700, color: "#ffffff", marginTop: "6px" }}>
                     {result.lead.source || "Dashboard"}
                   </div>
@@ -368,7 +368,7 @@ export default function LeadsPage() {
               {result.lead.aiSummary && (
                 <div style={{ marginBottom: "12px" }}>
                   <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "11px", color: "var(--az-text-secondary)", textTransform: "uppercase" }}>
-                    AI Analysis Summary:
+                    AI Summary &amp; Analysis:
                   </span>
                   <p style={{ fontSize: "13px", color: "#ffffff", marginTop: "4px", lineHeight: 1.5 }}>
                     {result.lead.aiSummary}
@@ -380,9 +380,9 @@ export default function LeadsPage() {
                 <div style={{ background: "var(--az-surface-alt)", border: "1px solid var(--az-border)", padding: "12px", borderRadius: "4px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                     <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "11px", color: "var(--az-emerald)", textTransform: "uppercase" }}>
-                      Suggested Automated Response:
+                      Suggested AI Reply:
                     </span>
-                    <span className="az-tag" style={{ fontSize: "9px" }}>WHATSAPP / EMAIL</span>
+                    <span className="az-tag" style={{ fontSize: "9px" }}>READY TO SEND</span>
                   </div>
                   <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", fontFamily: "var(--az-font-mono)" }}>
                     {result.lead.aiResponse}
@@ -398,12 +398,12 @@ export default function LeadsPage() {
           <table className="az-table">
             <thead>
               <tr>
-                <th>Lead Identity</th>
+                <th>Name &amp; Contact</th>
                 <th>Company</th>
                 <th>AI Score</th>
                 <th>Priority</th>
-                <th>Channel Ingress</th>
-                <th>Ingested</th>
+                <th>Source</th>
+                <th>Date Added</th>
                 <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
@@ -412,7 +412,7 @@ export default function LeadsPage() {
                 <tr>
                   <td colSpan={7} style={{ textAlign: "center", padding: "40px" }}>
                     <span style={{ fontFamily: "var(--az-font-mono)", color: "var(--az-text-muted)" }}>
-                      Querying Neon PostgreSQL records...
+                      Loading leads...
                     </span>
                   </td>
                 </tr>
@@ -421,13 +421,13 @@ export default function LeadsPage() {
                   <td colSpan={7} style={{ textAlign: "center", padding: "48px 20px" }}>
                     <div style={{ maxWidth: "360px", margin: "0 auto" }}>
                       <span className="az-tag" style={{ marginBottom: "10px", display: "inline-block" }}>
-                        PIPELINE DORMANT
+                        NO LEADS YET
                       </span>
                       <p style={{ fontSize: "14px", fontWeight: 600, color: "#ffffff", marginBottom: "6px" }}>
                         No leads captured yet
                       </p>
                       <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", marginBottom: "16px" }}>
-                        Incoming WhatsApp webhooks and REST leads will automatically populate and score here.
+                        Incoming WhatsApp messages and website inquiries will automatically appear and be scored here.
                       </p>
                       <button
                         type="button"
@@ -435,7 +435,7 @@ export default function LeadsPage() {
                         className="az-btn-primary"
                         style={{ fontSize: "12px", padding: "8px 16px" }}
                       >
-                        + Ingest First Lead
+                        + Add First Lead
                       </button>
                     </div>
                   </td>
@@ -494,7 +494,7 @@ export default function LeadsPage() {
 
                       <td>
                         <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "11px", color: "var(--az-text-secondary)" }}>
-                          {lead.source || "REST Ingress"}
+                          {lead.source || "Website / Manual"}
                         </span>
                       </td>
 
@@ -512,7 +512,7 @@ export default function LeadsPage() {
                             className="az-btn-secondary"
                             style={{ fontSize: "11px", padding: "3px 8px" }}
                           >
-                            Inspect
+                            View
                           </button>
                           <button
                             type="button"
@@ -538,7 +538,7 @@ export default function LeadsPage() {
           </table>
         </div>
 
-        {/* Lead Inspection Drawer / Modal */}
+        {/* Lead Details Modal */}
         {selectedLead && (
           <div className="az-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setSelectedLead(null); }}>
             <div className="az-modal-box" style={{ maxWidth: "680px" }}>
@@ -553,10 +553,10 @@ export default function LeadsPage() {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
-                    ID: {selectedLead.id.slice(0, 8)}
+                    LEAD #{selectedLead.id.slice(0, 8)}
                   </span>
                   <h3 style={{ fontFamily: "var(--az-font-mono)", fontSize: "13px", color: "#ffffff", textTransform: "uppercase" }}>
-                    Lead Telemetry Inspection
+                    Lead Details &amp; AI Analysis
                   </h3>
                 </div>
                 <button
@@ -574,7 +574,7 @@ export default function LeadsPage() {
                   <div>
                     <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#ffffff" }}>{selectedLead.name}</h2>
                     <div style={{ fontSize: "12px", color: "var(--az-text-secondary)", marginTop: "2px" }}>
-                      {selectedLead.company ? `${selectedLead.company} // ` : ""}{selectedLead.email || selectedLead.phone || "No contact info"}
+                      {selectedLead.company ? `${selectedLead.company} • ` : ""}{selectedLead.email || selectedLead.phone || "No contact info"}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: "8px" }}>
@@ -590,7 +590,7 @@ export default function LeadsPage() {
                 {selectedLead.message && (
                   <div style={{ background: "var(--az-surface-alt)", border: "1px solid var(--az-border)", padding: "14px", borderRadius: "4px" }}>
                     <div style={{ fontFamily: "var(--az-font-mono)", fontSize: "10px", color: "var(--az-text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
-                      Raw Ingress Message:
+                      Customer's Message:
                     </div>
                     <p style={{ fontSize: "13px", color: "#ffffff", lineHeight: 1.5 }}>
                       "{selectedLead.message}"
@@ -601,7 +601,7 @@ export default function LeadsPage() {
                 {selectedLead.aiSummary && (
                   <div>
                     <div style={{ fontFamily: "var(--az-font-mono)", fontSize: "10px", color: "var(--az-text-muted)", textTransform: "uppercase", marginBottom: "6px" }}>
-                      AI Autonomous Evaluation:
+                      AI Evaluation &amp; Summary:
                     </div>
                     <p style={{ fontSize: "13px", color: "var(--az-text-secondary)", lineHeight: 1.6 }}>
                       {selectedLead.aiSummary}
@@ -612,7 +612,7 @@ export default function LeadsPage() {
                 {selectedLead.aiResponse && (
                   <div style={{ background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.3)", padding: "14px", borderRadius: "4px" }}>
                     <div style={{ fontFamily: "var(--az-font-mono)", fontSize: "10px", color: "var(--az-emerald)", textTransform: "uppercase", marginBottom: "6px" }}>
-                      Generated Response Payload:
+                      Suggested AI Reply:
                     </div>
                     <p style={{ fontSize: "12px", color: "#ffffff", fontFamily: "var(--az-font-mono)", lineHeight: 1.6 }}>
                       {selectedLead.aiResponse}
@@ -627,17 +627,17 @@ export default function LeadsPage() {
                     className="az-btn-secondary"
                     style={{ borderColor: "rgba(239, 68, 68, 0.4)", color: "#f87171", fontSize: "12px", padding: "6px 14px" }}
                   >
-                    Delete Record
+                    Delete Lead
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      alert("Automated dispatch signal sent to customer channel.");
+                      alert("AI reply sent to customer.");
                     }}
                     className="az-btn-primary"
                     style={{ fontSize: "12px", padding: "6px 16px" }}
                   >
-                    Dispatch AI Response →
+                    Send AI Reply →
                   </button>
                 </div>
               </div>

@@ -101,60 +101,60 @@ export default function CustomersPage() {
 
   return (
     <div className="az-dash-page">
-      <TopBar title="Customer Directory" subtitle="Verified Business Accounts &amp; Commercial Nodes" />
+      <TopBar title="Customers" subtitle="Manage your client accounts and contact profiles" />
 
       <div className="az-dash-body">
         {/* Customer Directory Telemetry */}
         <div className="az-dash-stats">
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">ACTIVE ACCOUNTS</span>
-              <span className="az-tag az-tag-emerald" style={{ fontSize: "9px" }}>VERIFIED</span>
+              <span className="az-dash-stat-label">TOTAL CUSTOMERS</span>
+              <span className="az-tag az-tag-emerald" style={{ fontSize: "9px" }}>ACTIVE</span>
             </div>
             <div className="az-dash-stat-val">{customers.length}</div>
             <div className="az-dash-stat-delta">
               <span>●</span>
-              <span>100% active retention</span>
+              <span>Active client accounts</span>
             </div>
           </div>
 
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">ENTERPRISE NODES</span>
-              <span className="az-tag" style={{ fontSize: "9px" }}>TIER // 03</span>
+              <span className="az-dash-stat-label">ENTERPRISE CLIENTS</span>
+              <span className="az-tag" style={{ fontSize: "9px" }}>TIER</span>
             </div>
             <div className="az-dash-stat-val" style={{ color: "var(--az-cyan)" }}>
               {customers.filter((c) => c.tier === "Enterprise").length}
             </div>
             <div className="az-dash-stat-delta" style={{ color: "var(--az-cyan)" }}>
               <span>↑</span>
-              <span>High-throughput SLA</span>
+              <span>High priority accounts</span>
             </div>
           </div>
 
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">WHATSAPP INGRESS</span>
-              <span className="az-tag" style={{ fontSize: "9px" }}>SYNCED</span>
+              <span className="az-dash-stat-label">WHATSAPP CONTACTS</span>
+              <span className="az-tag" style={{ fontSize: "9px" }}>CONNECTED</span>
             </div>
             <div className="az-dash-stat-val">
               {customers.filter((c) => c.channel.toLowerCase().includes("whatsapp")).length}
             </div>
             <div className="az-dash-stat-delta">
               <span>●</span>
-              <span>Cloud API active</span>
+              <span>WhatsApp messaging</span>
             </div>
           </div>
 
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
               <span className="az-dash-stat-label">SYSTEM HEALTH</span>
-              <span className="az-tag az-tag-emerald" style={{ fontSize: "9px" }}>99.99%</span>
+              <span className="az-tag az-tag-emerald" style={{ fontSize: "9px" }}>100%</span>
             </div>
-            <div className="az-dash-stat-val" style={{ color: "var(--az-emerald)" }}>0 ERR</div>
+            <div className="az-dash-stat-val" style={{ color: "var(--az-emerald)" }}>0 ERRORS</div>
             <div className="az-dash-stat-delta">
               <span>●</span>
-              <span>Zero failed dispatches</span>
+              <span>All systems running</span>
             </div>
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function CustomersPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="az-select-cyber"
               >
-                <option value="all">All States</option>
+                <option value="all">All Statuses</option>
                 <option value="active">Active</option>
                 <option value="onboarding">Onboarding</option>
                 <option value="paused">Paused</option>
@@ -214,7 +214,7 @@ export default function CustomersPage() {
               className="az-btn-primary"
               style={{ textDecoration: "none", fontSize: "12px", padding: "8px 16px" }}
             >
-              + Provision Customer
+              + Add Customer
             </Link>
           </div>
         </div>

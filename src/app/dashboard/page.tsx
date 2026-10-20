@@ -97,7 +97,7 @@ export default function DashboardPage() {
 
   return (
     <div className="az-dash-page">
-      <TopBar title="Operational Overview" subtitle="System Runtime & Ingestion Telemetry" />
+      <TopBar title="Dashboard Overview" subtitle="Real-time business activity and automated actions" />
 
       <div className="az-dash-body">
         {/* Top Operational Status Banner */}
@@ -130,13 +130,13 @@ export default function DashboardPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
                 <span className="az-status-dot" />
-                RUNTIME ACTIVE
+                SYSTEM ONLINE
               </span>
               <span className="az-tag" style={{ fontSize: "10px" }}>
-                CLUSTER // US-EAST-CORE
+                AI READY
               </span>
               <span className="az-tag" style={{ fontSize: "10px" }}>
-                NEON PG SYNCED
+                DATABASE CONNECTED
               </span>
             </div>
             <h2
@@ -148,19 +148,19 @@ export default function DashboardPage() {
                 letterSpacing: "0.02em",
               }}
             >
-              Autonomous Business OS Active Console
+              Welcome to Autozip Business OS
             </h2>
             <p style={{ fontSize: "13px", color: "var(--az-text-secondary)", marginTop: "4px" }}>
-              Inbound omnichannel streams are continuously evaluated by real-time AI scoring pipelines.
+              Inbound customer leads and messages are automatically captured, scored by AI, and responded to instantly.
             </p>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Link href="/dashboard/leads" className="az-btn-primary" style={{ textDecoration: "none", fontSize: "12px", padding: "8px 16px" }}>
-              + Ingest Lead
+              + Add Lead
             </Link>
             <Link href="/dashboard/automation" className="az-btn-secondary" style={{ textDecoration: "none", fontSize: "12px", padding: "8px 16px" }}>
-              Configure Rules
+              Automations
             </Link>
           </div>
         </div>
@@ -171,29 +171,29 @@ export default function DashboardPage() {
             index="01"
             label="Total Customers"
             value={loadingStats ? "..." : String(stats.customers)}
-            delta="+8.4% vs last cycle"
-            sub="Active verified accounts"
+            delta="+8.4% this month"
+            sub="Active verified clients"
           />
           <StatCard
             index="02"
-            label="Ingested Leads"
+            label="Total Leads"
             value={loadingStats ? "..." : String(stats.leads)}
-            delta="Sub-400ms AI qualification"
-            sub="Omnichannel pipeline"
+            delta="Automatically scored by AI"
+            sub="From WhatsApp & Web"
           />
           <StatCard
             index="03"
             label="Conversations"
             value={loadingStats ? "..." : String(stats.conversations)}
-            delta="WhatsApp + Webhook"
-            sub="Autonomous threads"
+            delta="Instant AI replies"
+            sub="Customer message threads"
           />
           <StatCard
             index="04"
             label="Automations"
             value={loadingStats ? "..." : String(stats.automations)}
-            delta="Deterministic execution"
-            sub="Active rule state machine"
+            delta="Running automatically"
+            sub="Active business rules"
           />
         </div>
 
@@ -202,14 +202,14 @@ export default function DashboardPage() {
           <div className="az-dash-card-header">
             <div className="az-dash-card-title">
               <span className="az-status-dot" />
-              <span>LIVE TELEMETRY STREAM // EVENT LEDGER</span>
+              <span>LIVE ACTIVITY &amp; AI ACTIONS</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span className="az-tag" style={{ fontSize: "10px" }}>
-                BUFFER: 50 EVENTS
+                RECENT EVENTS
               </span>
               <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
-                STREAMING
+                LIVE FEED
               </span>
             </div>
           </div>
@@ -219,11 +219,11 @@ export default function DashboardPage() {
               <table className="az-table">
                 <thead>
                   <tr>
-                    <th>Timestamp</th>
-                    <th>Source &amp; Ingress</th>
-                    <th>Payload Synopsis</th>
-                    <th>AI Intent Evaluation</th>
-                    <th>Autonomous Action</th>
+                    <th>Time</th>
+                    <th>Channel</th>
+                    <th>Customer Message / Event</th>
+                    <th>AI Evaluation</th>
+                    <th>Action Taken</th>
                   </tr>
                 </thead>
                 <tbody>

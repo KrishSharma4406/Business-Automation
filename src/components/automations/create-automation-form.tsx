@@ -8,20 +8,20 @@ type CreateAutomationFormProps = {
 };
 
 const triggers = [
-  { value: "new_lead", label: "When a new lead arrives (WhatsApp / Web)" },
-  { value: "new_customer", label: "When a new customer is created" },
-  { value: "new_message", label: "When an inbound message arrives" },
+  { value: "new_lead", label: "When a new lead arrives (WhatsApp or Web)" },
+  { value: "new_customer", label: "When a new customer is added" },
+  { value: "new_message", label: "When a new message arrives" },
   { value: "lead_qualified", label: "When a lead is qualified (AI Score ≥ 80)" },
-  { value: "conversation_received", label: "When a conversation thread starts" },
+  { value: "conversation_received", label: "When a new chat conversation starts" },
 ];
 
 const actions = [
-  { value: "ai_qualify_lead", label: "AI: Qualify lead intent & scoring" },
-  { value: "generate_response", label: "AI: Generate contextual response" },
-  { value: "send_whatsapp", label: "Dispatch: Send WhatsApp template" },
-  { value: "send_email", label: "Dispatch: Send SMTP email notification" },
-  { value: "notify_owner", label: "Alert: Notify workspace operator" },
-  { value: "create_task", label: "Pipeline: Create Neon CRM task" },
+  { value: "ai_qualify_lead", label: "AI: Qualify & score lead intent" },
+  { value: "generate_response", label: "AI: Generate smart reply" },
+  { value: "send_whatsapp", label: "Send WhatsApp message" },
+  { value: "send_email", label: "Send email notification" },
+  { value: "notify_owner", label: "Send alert to business owner" },
+  { value: "create_task", label: "Create a follow-up task" },
 ];
 
 export default function CreateAutomationForm({
@@ -92,10 +92,10 @@ export default function CreateAutomationForm({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
               <span className="az-status-dot" />
-              RULE BLUEPRINT
+              NEW AUTOMATION
             </span>
             <h3 style={{ fontFamily: "var(--az-font-mono)", fontSize: "13px", color: "#ffffff", textTransform: "uppercase" }}>
-              Deploy Autonomous Rule
+              Create New Automation
             </h3>
           </div>
 
@@ -113,24 +113,24 @@ export default function CreateAutomationForm({
         <form onSubmit={handleSubmit} style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
           {error && (
             <div className="az-auth-error">
-              [RULE_ERROR] {error}
+              {error}
             </div>
           )}
 
           <div className="az-field">
-            <label className="az-field-label">Rule Name // Blueprint Identifier</label>
+            <label className="az-field-label">Automation Name</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Instant WhatsApp Intake & Booking"
+              placeholder="e.g. Instant WhatsApp Reply & Scoring"
               className="az-field-input"
             />
           </div>
 
           <div className="az-field">
-            <label className="az-field-label">Trigger Condition // Event Ingress</label>
+            <label className="az-field-label">When this happens (Trigger)</label>
             <select
               value={trigger}
               onChange={(e) => setTrigger(e.target.value)}
@@ -145,7 +145,7 @@ export default function CreateAutomationForm({
           </div>
 
           <div className="az-field">
-            <label className="az-field-label">Autonomous Action // Execution Node</label>
+            <label className="az-field-label">Take this action (Action)</label>
             <select
               value={action}
               onChange={(e) => setAction(e.target.value)}
@@ -160,12 +160,12 @@ export default function CreateAutomationForm({
           </div>
 
           <div className="az-field">
-            <label className="az-field-label">Operational Synopsis // Description</label>
+            <label className="az-field-label">Description (Optional)</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Evaluates commercial intent upon receiving message and sends scheduling link."
+              placeholder="Briefly describe what this automation does for your business..."
               className="az-field-textarea"
             />
           </div>
@@ -183,10 +183,10 @@ export default function CreateAutomationForm({
           >
             <div>
               <div style={{ fontFamily: "var(--az-font-mono)", fontSize: "12px", color: "#ffffff", fontWeight: 600 }}>
-                Initial State
+                Status
               </div>
               <div style={{ fontSize: "11px", color: "var(--az-text-secondary)" }}>
-                Start this automation immediately upon provisioning
+                Enable this automation immediately upon saving
               </div>
             </div>
             <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
@@ -218,7 +218,7 @@ export default function CreateAutomationForm({
               className="az-btn-primary"
               style={{ fontSize: "12px", padding: "8px 22px" }}
             >
-              {loading ? "Deploying Blueprint..." : "Deploy Automation Node"}
+              {loading ? "Creating..." : "Create Automation"}
             </button>
           </div>
         </form>

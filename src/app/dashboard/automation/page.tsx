@@ -205,56 +205,56 @@ export default function AutomationPage() {
 
   return (
     <div className="az-dash-page">
-      <TopBar title="Automation Pipelines" subtitle="Deterministic State Machines &amp; Event-Driven Rules" />
+      <TopBar title="Automations" subtitle="Set up automated triggers and AI actions for your business" />
 
       <div className="az-dash-body">
         {/* Statistics Telemetry */}
         <div className="az-dash-stats">
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">TOTAL RULES</span>
-              <span className="az-tag" style={{ fontSize: "9px" }}>STATE MACHINE</span>
+              <span className="az-dash-stat-label">TOTAL AUTOMATIONS</span>
+              <span className="az-tag" style={{ fontSize: "9px" }}>ALL RULES</span>
             </div>
             <div className="az-dash-stat-val">{stats.total}</div>
             <div className="az-dash-stat-delta">
               <span>●</span>
-              <span>Event-driven triggers</span>
+              <span>Configured workflows</span>
             </div>
           </div>
 
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">ACTIVE NODES</span>
-              <span className="az-tag az-tag-emerald" style={{ fontSize: "9px" }}>LISTENING</span>
+              <span className="az-dash-stat-label">ACTIVE RULES</span>
+              <span className="az-tag az-tag-emerald" style={{ fontSize: "9px" }}>RUNNING</span>
             </div>
             <div className="az-dash-stat-val" style={{ color: "var(--az-emerald)" }}>{stats.active}</div>
             <div className="az-dash-stat-delta">
               <span>●</span>
-              <span>Continuous webhook evaluation</span>
+              <span>Listening for events</span>
             </div>
           </div>
 
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
               <span className="az-dash-stat-label">PAUSED RULES</span>
-              <span className="az-tag" style={{ fontSize: "9px" }}>STANDBY</span>
+              <span className="az-tag" style={{ fontSize: "9px" }}>PAUSED</span>
             </div>
             <div className="az-dash-stat-val" style={{ color: "var(--az-amber)" }}>{stats.paused}</div>
             <div className="az-dash-stat-delta" style={{ color: "var(--az-text-muted)" }}>
               <span>○</span>
-              <span>Inactive execution states</span>
+              <span>Temporarily stopped</span>
             </div>
           </div>
 
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
               <span className="az-dash-stat-label">TOTAL EXECUTIONS</span>
-              <span className="az-tag az-tag-cyan" style={{ fontSize: "9px" }}>DISPATCHED</span>
+              <span className="az-tag az-tag-cyan" style={{ fontSize: "9px" }}>TRIGGERED</span>
             </div>
             <div className="az-dash-stat-val" style={{ color: "var(--az-cyan)" }}>{stats.executions}</div>
             <div className="az-dash-stat-delta" style={{ color: "var(--az-cyan)" }}>
               <span>↑</span>
-              <span>Sub-400ms latency</span>
+              <span>Actions completed</span>
             </div>
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function AutomationPage() {
           <div className="az-toolbar-group">
             <input
               type="text"
-              placeholder="Search automation rules..."
+              placeholder="Search automations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="az-input-search"
@@ -273,14 +273,14 @@ export default function AutomationPage() {
 
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "11px", color: "var(--az-text-muted)" }}>
-                STATE:
+                STATUS:
               </span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="az-select-cyber"
               >
-                <option value="all">All States</option>
+                <option value="all">All Statuses</option>
                 <option value="active">Active Only</option>
                 <option value="paused">Paused Only</option>
               </select>
@@ -295,7 +295,7 @@ export default function AutomationPage() {
                 onChange={(e) => setTriggerFilter(e.target.value)}
                 className="az-select-cyber"
               >
-                <option value="all">All Ingress Triggers</option>
+                <option value="all">All Triggers</option>
                 {Object.entries(TRIGGER_META).map(([key, item]) => (
                   <option key={key} value={key}>
                     {item.label}
@@ -305,7 +305,7 @@ export default function AutomationPage() {
             </div>
 
             <span className="az-tag" style={{ fontSize: "11px" }}>
-              {filteredAutomations.length} PIPELINE{filteredAutomations.length === 1 ? "" : "S"}
+              {filteredAutomations.length} AUTOMATION{filteredAutomations.length === 1 ? "" : "S"}
             </span>
           </div>
 
@@ -316,7 +316,7 @@ export default function AutomationPage() {
               className="az-btn-primary"
               style={{ fontSize: "12px", padding: "8px 18px" }}
             >
-              + Create Automation Node
+              + New Automation
             </button>
           </div>
         </div>
@@ -327,24 +327,24 @@ export default function AutomationPage() {
           </div>
         )}
 
-        {/* Automations Blueprints Grid */}
+        {/* Automations Grid */}
         {loading ? (
           <div style={{ padding: "48px", textAlign: "center" }}>
             <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "12px", color: "var(--az-text-muted)" }}>
-              Querying Neon PostgreSQL automation blueprints...
+              Loading automations...
             </span>
           </div>
         ) : filteredAutomations.length === 0 ? (
           <div className="az-dash-card" style={{ padding: "48px 20px", textAlign: "center" }}>
             <div style={{ maxWidth: "380px", margin: "0 auto" }}>
               <span className="az-tag" style={{ marginBottom: "10px", display: "inline-block" }}>
-                PIPELINES DORMANT
+                NO AUTOMATIONS YET
               </span>
               <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#ffffff", marginBottom: "6px" }}>
-                No active automation rules
+                No automations created yet
               </h3>
               <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", marginBottom: "16px", lineHeight: 1.5 }}>
-                Deploy autonomous workflows to automatically qualify leads, dispatch WhatsApp templates, and sync Neon DB records.
+                Create automated workflows to score inbound leads, send automatic WhatsApp replies, and notify team members.
               </p>
               <button
                 type="button"
@@ -352,7 +352,7 @@ export default function AutomationPage() {
                 className="az-btn-primary"
                 style={{ fontSize: "12px", padding: "8px 18px" }}
               >
-                + Deploy First Automation Rule
+                + Create First Automation
               </button>
             </div>
           </div>
@@ -410,10 +410,10 @@ export default function AutomationPage() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span className="az-tag" style={{ fontSize: "10px" }}>
-                          RULE {String(idx + 1).padStart(2, "0")}
+                          #{String(idx + 1).padStart(2, "0")}
                         </span>
                         <span className={item.enabled ? "az-tag az-tag-emerald" : "az-tag"} style={{ fontSize: "10px" }}>
-                          {item.enabled ? "● RUNTIME ACTIVE" : "○ PAUSED"}
+                          {item.enabled ? "● ACTIVE" : "○ PAUSED"}
                         </span>
                       </div>
 
@@ -512,7 +512,7 @@ export default function AutomationPage() {
                         className="az-btn-secondary"
                         style={{ fontSize: "11px", padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: "4px" }}
                       >
-                        <span>{isTesting ? "Executing..." : "Simulate Run"}</span>
+                        <span>{isTesting ? "Testing..." : "Test Run"}</span>
                         <span style={{ color: "var(--az-emerald)" }}>⚡</span>
                       </button>
                     </div>

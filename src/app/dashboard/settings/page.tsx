@@ -9,7 +9,6 @@ export default function SettingsPage() {
       <TopBar title="Settings" subtitle="Workspace preferences, team access, and integrations" />
 
       <div className="az-dash-body">
-        {/* Settings Grid */}
         <div
           style={{
             display: "grid",
@@ -17,7 +16,6 @@ export default function SettingsPage() {
             gap: "16px",
           }}
         >
-          {/* General Workspace Card */}
           <div className="az-dash-card">
             <div className="az-dash-card-header">
               <div className="az-dash-card-title">
@@ -36,7 +34,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Integrations Card */}
           <div className="az-dash-card" style={{ display: "flex", flexDirection: "column" }}>
             <div className="az-dash-card-header">
               <div className="az-dash-card-title">
@@ -73,7 +70,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Notifications Card */}
           <div className="az-dash-card">
             <div className="az-dash-card-header">
               <div className="az-dash-card-title">
@@ -91,7 +87,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Team Members Card */}
           <div className="az-dash-card">
             <div className="az-dash-card-header">
               <div className="az-dash-card-title">
@@ -109,7 +104,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* API & Webhooks Card */}
           <div className="az-dash-card">
             <div className="az-dash-card-header">
               <div className="az-dash-card-title">
@@ -127,7 +121,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Security Card */}
           <div className="az-dash-card">
             <div className="az-dash-card-header">
               <div className="az-dash-card-title">

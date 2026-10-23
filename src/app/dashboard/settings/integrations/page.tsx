@@ -129,7 +129,6 @@ export default function IntegrationsPage() {
       />
 
       <div className="az-dash-body">
-        {/* Top bar with back link & stats */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
           <Link
             href="/dashboard/settings"
@@ -143,7 +142,6 @@ export default function IntegrationsPage() {
           </span>
         </div>
 
-        {/* Stats Grid */}
         <div className="az-dash-stats">
           <div className="az-dash-stat">
             <div className="az-dash-stat-top">
@@ -177,7 +175,6 @@ export default function IntegrationsPage() {
           </div>
         </div>
 
-        {/* Success banner */}
         {successMessage && (
           <div
             style={{
@@ -197,7 +194,6 @@ export default function IntegrationsPage() {
           </div>
         )}
 
-        {/* Error banner */}
         {error && (
           <div
             style={{
@@ -213,7 +209,6 @@ export default function IntegrationsPage() {
           </div>
         )}
 
-        {/* Grid of integrations */}
         {loading ? (
           <div
             style={{
@@ -259,7 +254,6 @@ export default function IntegrationsPage() {
                       : "var(--az-border)",
                   }}
                 >
-                  {/* Header */}
                   <div className="az-dash-card-header">
                     <div className="az-dash-card-title">
                       <span
@@ -296,7 +290,6 @@ export default function IntegrationsPage() {
                     </span>
                   </div>
 
-                  {/* Body */}
                   <div className="az-dash-card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "16px" }}>
                     <div>
                       <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", lineHeight: 1.45, marginBottom: "14px" }}>
@@ -324,7 +317,6 @@ export default function IntegrationsPage() {
                       )}
                     </div>
 
-                    {/* Actions */}
                     <div style={{ display: "flex", gap: "8px", paddingTop: "12px", borderTop: "1px solid var(--az-border)" }}>
                       {isConnected ? (
                         <>
@@ -395,7 +387,6 @@ export default function IntegrationsPage() {
         )}
       </div>
 
-      {/* Connect Modal */}
       {connectProvider && (
         <ConnectModal
           provider={connectProvider}

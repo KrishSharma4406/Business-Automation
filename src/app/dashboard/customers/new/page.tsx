@@ -8,15 +8,42 @@ import Link from "next/link";
 export default function NewCustomerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      setLoading(false);
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      name: (formData.get("name") as string)?.trim(),
+      email: (formData.get("email") as string)?.trim() || undefined,
+      phone: (formData.get("phone") as string)?.trim() || undefined,
+      company: (formData.get("company") as string)?.trim() || undefined,
+      notes: (formData.get("notes") as string)?.trim() || undefined,
+      status: "active",
+    };
+
+    try {
+      const res = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create customer");
+      }
+
       router.push("/dashboard/customers");
-    }, 600);
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || "Failed to save customer");
+      setLoading(false);
+    }
   }
 
   return (
@@ -39,15 +66,21 @@ export default function NewCustomerPage() {
             </Link>
           </div>
 
+          {error && (
+            <div style={{ margin: "16px 24px 0", padding: "10px 14px", background: "rgba(239, 68, 68, 0.1)", border: "1px solid var(--az-rose)", borderRadius: "4px", color: "var(--az-rose)", fontSize: "12px", fontFamily: "var(--az-font-mono)" }}>
+              [ERROR] {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "18px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div className="az-field">
-                <label className="az-field-label">Full Name</label>
+                <label className="az-field-label">Full Name *</label>
                 <input name="name" placeholder="Dr. Vikram Sen" required className="az-field-input" />
               </div>
               <div className="az-field">
                 <label className="az-field-label">Email Address</label>
-                <input name="email" type="email" placeholder="vikram@cliniccorp.in" required className="az-field-input" />
+                <input name="email" type="email" placeholder="vikram@cliniccorp.in" className="az-field-input" />
               </div>
               <div className="az-field">
                 <label className="az-field-label">Phone / WhatsApp</label>
@@ -56,25 +89,6 @@ export default function NewCustomerPage() {
               <div className="az-field">
                 <label className="az-field-label">Company / Business Name</label>
                 <input name="company" placeholder="Sen Healthcare Systems" className="az-field-input" />
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div className="az-field">
-                <label className="az-field-label">Plan / Tier</label>
-                <select name="tier" className="az-field-select" defaultValue="Enterprise">
-                  <option value="Enterprise">Enterprise (50+ seats, custom SLA)</option>
-                  <option value="Growth">Growth (15 seats, priority support)</option>
-                  <option value="Starter">Starter (Basic plan)</option>
-                </select>
-              </div>
-              <div className="az-field">
-                <label className="az-field-label">Preferred Contact Method</label>
-                <select name="channel" className="az-field-select" defaultValue="WhatsApp Cloud API">
-                  <option value="WhatsApp Cloud API">WhatsApp</option>
-                  <option value="REST Webhook">Webhook / API</option>
-                  <option value="SMTP Relay">Email</option>
-                </select>
               </div>
             </div>
 

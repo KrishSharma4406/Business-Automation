@@ -82,21 +82,6 @@ function LoginForm() {
         </div>
       )}
 
-      {/* Google OAuth Button */}
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        disabled={googleLoading || loading}
-        className="az-google-btn"
-      >
-        <GoogleIcon />
-        {googleLoading ? "Connecting via Google..." : "Continue with Google"}
-      </button>
-
-      <div className="az-auth-divider">
-        <span>or authenticate with credentials</span>
-      </div>
-
       <form onSubmit={handleSubmit} className="az-auth-form">
         <div className="az-field">
           <label htmlFor="email" className="az-field-label">
@@ -136,6 +121,21 @@ function LoginForm() {
           {loading ? "Authenticating Node..." : "Authenticate & Connect"}
         </button>
       </form>
+
+      <div className="az-auth-divider">
+        <span>or continue with</span>
+      </div>
+
+      {/* Google OAuth Button — below the form */}
+      <button
+        type="button"
+        onClick={handleGoogleSignIn}
+        disabled={googleLoading || loading}
+        className="az-google-btn"
+      >
+        <GoogleIcon />
+        {googleLoading ? "Connecting via Google..." : "Continue with Google"}
+      </button>
 
       <div className="az-auth-footer">
         <div>

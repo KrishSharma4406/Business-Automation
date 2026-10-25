@@ -1999,7 +1999,7 @@ body {
   border: 1px solid var(--az-border-bright);
   border-radius: 8px;
   color: var(--az-text-primary);
-  font-family: var(--az-font-sans);
+  font-family: var(--az-font-mono);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;

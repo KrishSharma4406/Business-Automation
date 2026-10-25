@@ -122,21 +122,6 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Google OAuth Button */}
-          <button
-            type="button"
-            onClick={handleGoogleSignUp}
-            disabled={googleLoading || loading}
-            className="az-google-btn"
-          >
-            <GoogleIcon />
-            {googleLoading ? "Provisioning via Google..." : "Deploy with Google"}
-          </button>
-
-          <div className="az-auth-divider">
-            <span>or provision with credentials</span>
-          </div>
-
           <form onSubmit={handleSubmit} className="az-auth-form">
             <div className="az-field">
               <label htmlFor="name" className="az-field-label">
@@ -202,6 +187,21 @@ export default function RegisterPage() {
               {loading ? "Provisioning & Connecting..." : "Deploy Workspace Node"}
             </button>
           </form>
+
+          <div className="az-auth-divider">
+            <span>or deploy with</span>
+          </div>
+
+          {/* Google OAuth Button — below the form */}
+          <button
+            type="button"
+            onClick={handleGoogleSignUp}
+            disabled={googleLoading || loading}
+            className="az-google-btn"
+          >
+            <GoogleIcon />
+            {googleLoading ? "Provisioning via Google..." : "Deploy with Google"}
+          </button>
 
           <div className="az-auth-footer">
             <div>

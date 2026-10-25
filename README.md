@@ -1,22 +1,22 @@
-# Autoleep - AI Business OS
+# Autozip - AI Business OS
 
-Autoleep is an autonomous business operations platform designed for automated lead qualification, customer management, and event-driven communication workflows.
+Autozip is an autonomous business operations platform for automated lead qualification, customer management, and event-driven communication workflows.
 
 ## Core Capabilities
 
-- Multi-Tenant Authentication: User registration and credential authentication powered by NextAuth and bcrypt with PostgreSQL storage.
-- Inbound Lead Ingress: Public webhook endpoint (`/api/webhooks/lead`) and dashboard forms for automated lead intake.
-- AI Qualification Engine: Automated lead scoring (0-100), tier prioritization, and personalized response drafting powered by Groq LLM.
-- Customer Management: Complete CRUD API and interface for client accounts, contact directories, and service tiers (`/api/customers`).
-- Automation Runtime: Event-driven execution engine supporting triggers like `new_lead` and `lead_qualified`.
-- Serverless Infrastructure: Database persistence on Neon PostgreSQL with isolated business workspace scoping.
+- **Authentication**: Credentials + Google OAuth with auto-provisioned workspaces, powered by NextAuth v5 and bcrypt with PostgreSQL storage.
+- **Inbound Lead Ingress**: Public webhook endpoint (`/api/webhooks/lead`) and dashboard forms for automated lead intake.
+- **AI Qualification Engine**: Automated lead scoring (0-100), tier prioritization, and personalized response drafting via Groq LLM.
+- **Customer Management**: Full CRUD API and interface for client accounts and contact directories (`/api/customers`).
+- **Automation Runtime**: Event-driven execution engine supporting triggers like `new_lead` and `lead_qualified`.
+- **Serverless Infrastructure**: Neon PostgreSQL with isolated multi-tenant business workspace scoping.
 
 ## Tech Stack
 
-- Framework: Next.js (App Router)
+- Framework: Next.js 16 (App Router)
 - Language: TypeScript
-- Database: Neon Serverless PostgreSQL, Prisma
-- Authentication: NextAuth v5 (Auth.js)
+- Database: Neon Serverless PostgreSQL, Prisma 8
+- Authentication: NextAuth v5 (Credentials + Google OAuth)
 - AI Inference: Groq SDK
 - Communications: Resend API
 - Styling: Custom CSS Design System
@@ -25,9 +25,10 @@ Autoleep is an autonomous business operations platform designed for automated le
 
 ### 1. Prerequisites
 
-- Node.js 18 or later
+- Node.js 18+
 - Neon PostgreSQL database
 - Groq API Key
+- Google Cloud OAuth credentials (optional, for Google sign-in)
 
 ### 2. Environment Setup
 
@@ -38,27 +39,27 @@ DATABASE_URL="your-neon-postgres-connection-string"
 AUTH_SECRET="your-nextauth-secret"
 GROQ_API_KEY="your-groq-api-key"
 RESEND_API_KEY="your-resend-api-key"
+AUTH_GOOGLE_ID="your-google-client-id"
+AUTH_GOOGLE_SECRET="your-google-client-secret"
 ```
 
-### 3. Install Dependencies
+### 3. Install and Run
 
 ```bash
 npm install
-```
-
-### 4. Start the Application
-
-```bash
 npm run dev
 ```
 
-Open `http://localhost:3000` in your browser.
+Open `http://localhost:3000`.
 
 ## Key API Routes
 
-- `POST /api/auth/register` - Provision new operator account and business workspace
-- `GET, POST /api/customers` - Retrieve and create customer records
-- `GET, PATCH, DELETE /api/customers/[id]` - Inspect, update, or remove customer accounts
-- `GET, POST /api/webhooks/lead` - Inbound public webhook for automated lead ingestion
-- `GET, POST /api/leads` - Lead directory and qualification endpoints
-- `GET, POST /api/automations` - Autonomous pipeline configuration
+| Route | Methods | Description |
+|---|---|---|
+| `/api/auth/register` | POST | Provision new operator account and workspace |
+| `/api/auth/[...nextauth]` | GET, POST | NextAuth handler (Credentials + Google OAuth) |
+| `/api/customers` | GET, POST | List and create customer records |
+| `/api/customers/[id]` | GET, PATCH, DELETE | Manage individual customer accounts |
+| `/api/webhooks/lead` | GET, POST | Public webhook for automated lead ingestion |
+| `/api/leads` | GET, POST | Lead directory and qualification |
+| `/api/automations` | GET, POST | Automation pipeline configuration |

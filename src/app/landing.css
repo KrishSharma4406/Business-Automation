@@ -1986,7 +1986,63 @@ body {
 .az-auth-footer a:hover {
   color: #ffffff;
 }
-  
+
+/* Google OAuth Button */
+.az-google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--az-surface-alt);
+  border: 1px solid var(--az-border-bright);
+  border-radius: 8px;
+  color: var(--az-text-primary);
+  font-family: var(--az-font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
+
+.az-google-btn:hover {
+  background: var(--az-surface-elevated);
+  border-color: var(--az-text-muted);
+  box-shadow: 0 0 16px rgba(66, 133, 244, 0.1);
+}
+
+.az-google-btn:active {
+  transform: scale(0.98);
+}
+
+.az-google-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Auth Divider */
+.az-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  font-family: var(--az-font-mono);
+  font-size: 10px;
+  color: var(--az-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.az-auth-divider::before,
+.az-auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--az-border);
+}
+
 .az-pricing-nodes-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

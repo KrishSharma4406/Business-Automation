@@ -1,8 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 
 import bcrypt from "bcryptjs";
-import { getUserByEmail } from "@/src/lib/auth-db";
+import { getUserByEmail, findOrCreateOAuthUser, linkOAuthAccount } from "@/src/lib/auth-db";
 import { authConfig } from "@/src/lib/auth.config";
 
 export const {
@@ -14,6 +15,20 @@ export const {
   ...authConfig,
 
   providers: [
+    // Google OAuth Provider
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID || "",
+      clientSecret: process.env.AUTH_GOOGLE_SECRET || "",
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+        },
+      },
+    }),
+
+    // Credentials Provider
     Credentials({
       name: "Credentials",
 
@@ -73,4 +88,58 @@ export const {
       },
     }),
   ],
+
+  callbacks: {
+    ...authConfig.callbacks,
+
+    async signIn({ user, account }) {
+      // For OAuth sign-ins (Google), find or create user in DB
+      if (account?.provider === "google" && user.email) {
+        try {
+          const dbUser = await findOrCreateOAuthUser({
+            email: user.email,
+            name: user.name || null,
+          });
+
+          // Link the OAuth account
+          await linkOAuthAccount({
+            userId: dbUser.id,
+            provider: account.provider,
+            providerAccountId: account.providerAccountId,
+            accessToken: account.access_token || null,
+            refreshToken: account.refresh_token || null,
+            expiresAt: account.expires_at || null,
+            tokenType: account.token_type || null,
+            scope: account.scope || null,
+            idToken: account.id_token || null,
+          });
+
+          // Override user.id so the JWT gets the DB user ID
+          user.id = dbUser.id;
+          user.name = dbUser.name;
+        } catch (err) {
+          console.error("Google OAuth signIn callback error:", err);
+          return false;
+        }
+      }
+
+      return true;
+    },
+
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id =
+          (token.id as string) ??
+          (token.sub as string);
+      }
+      return session;
+    },
+  },
 });

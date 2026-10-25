@@ -141,3 +141,123 @@ export async function registerNewUser(params: {
     client.release();
   }
 }
+
+/**
+ * Find an existing user by email, or create a new one for OAuth sign-in.
+ * Also provisions a Business, Workspace, and WorkspaceMember if creating.
+ */
+export async function findOrCreateOAuthUser(params: {
+  email: string;
+  name: string | null;
+}): Promise<{ id: string; name: string; email: string; isNew: boolean }> {
+  const normalizedEmail = params.email.trim().toLowerCase();
+  const displayName = (params.name || "").trim() || "Workspace Node";
+
+  // Check if user already exists
+  const existing = await getUserByEmail(normalizedEmail);
+  if (existing) {
+    return {
+      id: existing.id,
+      name: existing.name || displayName,
+      email: existing.email,
+      isNew: false,
+    };
+  }
+
+  // Provision new user + business + workspace (same as registerNewUser but no password)
+  const userId = crypto.randomUUID();
+  const businessId = crypto.randomUUID();
+  const workspaceId = crypto.randomUUID();
+  const memberId = crypto.randomUUID();
+
+  const baseSlug = (displayName || "workspace")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "workspace";
+  const slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `INSERT INTO "User" (id, email, name, "passwordHash", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, NULL, NOW(), NOW())`,
+      [userId, normalizedEmail, displayName]
+    );
+
+    await client.query(
+      `INSERT INTO "Business" (id, "ownerId", name, slug, description, "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+      [businessId, userId, displayName, slug, `Workspace for ${displayName}`]
+    );
+
+    await client.query(
+      `INSERT INTO "Workspace" (id, name, slug, "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, NOW(), NOW())
+       ON CONFLICT (slug) DO NOTHING`,
+      [workspaceId, displayName, slug]
+    );
+
+    await client.query(
+      `INSERT INTO "WorkspaceMember" (id, "workspaceId", "userId", role, "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, 'OWNER', NOW(), NOW())
+       ON CONFLICT DO NOTHING`,
+      [memberId, workspaceId, userId]
+    );
+
+    await client.query("COMMIT");
+
+    return {
+      id: userId,
+      name: displayName,
+      email: normalizedEmail,
+      isNew: true,
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Store or update an OAuth account link in the Account table
+ */
+export async function linkOAuthAccount(params: {
+  userId: string;
+  provider: string;
+  providerAccountId: string;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  expiresAt?: number | null;
+  tokenType?: string | null;
+  scope?: string | null;
+  idToken?: string | null;
+}): Promise<void> {
+  await pool.query(
+    `INSERT INTO "Account" (id, "userId", provider, "providerAccountId", "accessToken", "refreshToken", "expiresAt", "tokenType", scope, "idToken", "createdAt", "updatedAt")
+     VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+     ON CONFLICT (provider, "providerAccountId")
+     DO UPDATE SET
+       "accessToken" = EXCLUDED."accessToken",
+       "refreshToken" = EXCLUDED."refreshToken",
+       "expiresAt" = EXCLUDED."expiresAt",
+       "tokenType" = EXCLUDED."tokenType",
+       scope = EXCLUDED.scope,
+       "idToken" = EXCLUDED."idToken",
+       "updatedAt" = NOW()`,
+    [
+      params.userId,
+      params.provider,
+      params.providerAccountId,
+      params.accessToken || null,
+      params.refreshToken || null,
+      params.expiresAt || null,
+      params.tokenType || null,
+      params.scope || null,
+      params.idToken || null,
+    ]
+  );
+}

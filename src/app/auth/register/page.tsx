@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 import "@/src/app/landing.css";
 
@@ -16,6 +17,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
+    const email = (formData.get("email") as string)?.trim();
     const password = formData.get("password") as string;
     const confirm = formData.get("confirm") as string;
 
@@ -31,7 +33,7 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.get("name"),
-          email: formData.get("email"),
+          email,
           password,
         }),
       });
@@ -42,7 +44,20 @@ export default function RegisterPage() {
         throw new Error(data.error || "Workspace node provisioning failed.");
       }
 
-      router.push("/auth/login");
+      // Automatically authenticate session and go directly to main dashboard
+      const signInResult = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        router.push("/auth/login");
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred during node provisioning.");
     } finally {
@@ -146,7 +161,7 @@ export default function RegisterPage() {
               disabled={loading}
               className="az-auth-submit-btn"
             >
-              {loading ? "Provisioning Cluster..." : "Deploy Workspace Node"}
+              {loading ? "Provisioning & Connecting..." : "Deploy Workspace Node"}
             </button>
           </form>
 

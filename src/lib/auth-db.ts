@@ -30,6 +30,7 @@ export interface DbUser {
   id: string;
   name: string | null;
   email: string;
+  phone: string | null;
   passwordHash: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -41,7 +42,7 @@ export interface DbUser {
 export async function getUserByEmail(email: string): Promise<DbUser | null> {
   const normalized = email.trim().toLowerCase();
   const result = await pool.query<DbUser>(
-    `SELECT id, name, email, "passwordHash", "createdAt", "updatedAt"
+    `SELECT id, name, email, phone, "passwordHash", "createdAt", "updatedAt"
      FROM "User"
      WHERE LOWER(email) = $1
      LIMIT 1`,
@@ -55,7 +56,7 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
  */
 export async function getUserById(id: string): Promise<DbUser | null> {
   const result = await pool.query<DbUser>(
-    `SELECT id, name, email, "passwordHash", "createdAt", "updatedAt"
+    `SELECT id, name, email, phone, "passwordHash", "createdAt", "updatedAt"
      FROM "User"
      WHERE id = $1
      LIMIT 1`,
@@ -70,10 +71,12 @@ export async function getUserById(id: string): Promise<DbUser | null> {
 export async function registerNewUser(params: {
   name: string;
   email: string;
+  phone?: string | null;
   password: string;
-}): Promise<{ id: string; name: string; email: string }> {
+}): Promise<{ id: string; name: string; email: string; phone: string | null }> {
   const normalizedEmail = params.email.trim().toLowerCase();
   const trimmedName = params.name.trim() || "Workspace Node";
+  const contactPhone = params.phone ? params.phone.trim() : null;
 
   // Check if user already exists
   const existing = await getUserByEmail(normalizedEmail);
@@ -100,9 +103,9 @@ export async function registerNewUser(params: {
 
     // 1. Insert User
     await client.query(
-      `INSERT INTO "User" (id, email, name, "passwordHash", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, NOW(), NOW())`,
-      [userId, normalizedEmail, trimmedName, passwordHash]
+      `INSERT INTO "User" (id, email, name, phone, "passwordHash", "createdAt", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+      [userId, normalizedEmail, trimmedName, contactPhone, passwordHash]
     );
 
     // 2. Insert Business node for this user
@@ -133,6 +136,7 @@ export async function registerNewUser(params: {
       id: userId,
       name: trimmedName,
       email: normalizedEmail,
+      phone: contactPhone,
     };
   } catch (error) {
     await client.query("ROLLBACK");

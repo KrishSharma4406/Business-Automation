@@ -96,7 +96,7 @@ export default function TopBar({ title, subtitle }: { title: string; subtitle?: 
             textDecoration: "none",
           }}
         >
-          <span>View Website</span>
+          <span>Visit Website</span>
           <span style={{ color: "var(--az-emerald)" }}>↗</span>
         </Link>
       </div>

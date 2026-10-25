@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { getBusinessForUser, getWorkspaceForUser } from "@/src/lib/workspace";
 import { db } from "@/src/prisma/db";
+import { getUserById, pool } from "@/src/lib/auth-db";
 import { z } from "zod";
 
 const UpdateSettingsSchema = z.object({
   companyName: z.string().min(1, "Company name cannot be empty").optional(),
+  userName: z.string().min(1, "Name cannot be empty").optional(),
+  phone: z.string().optional().nullable(),
   description: z.string().optional(),
   website: z.string().url().optional().or(z.literal("")),
 });
@@ -23,6 +26,7 @@ export async function GET(request: Request) {
 
     const business = await getBusinessForUser(session.user.id);
     const workspaceMember = await getWorkspaceForUser(session.user.id);
+    const dbUser = await getUserById(session.user.id);
 
     // Count integrations for this workspace if available
     let activeIntegrationsCount = 0;
@@ -49,8 +53,9 @@ export async function GET(request: Request) {
       settings: {
         user: {
           id: session.user.id,
-          name: session.user.name || "Operator",
-          email: session.user.email,
+          name: dbUser?.name || session.user.name || "Operator",
+          email: dbUser?.email || session.user.email,
+          phone: dbUser?.phone || null,
           role: workspaceMember?.role || "ADMIN",
         },
         business: {
@@ -109,6 +114,35 @@ export async function PATCH(request: Request) {
     }
 
     const data = parseResult.data;
+
+    // Update user profile name or phone if provided
+    let updatedUser = null;
+    if (data.userName || data.phone !== undefined) {
+      const userUpdates: string[] = [];
+      const userValues: any[] = [];
+      let paramIndex = 1;
+
+      if (data.userName) {
+        userUpdates.push(`name = $${paramIndex++}`);
+        userValues.push(data.userName);
+      }
+      if (data.phone !== undefined) {
+        userUpdates.push(`phone = $${paramIndex++}`);
+        userValues.push(data.phone || null);
+      }
+
+      if (userUpdates.length > 0) {
+        userValues.push(session.user.id);
+        await pool.query(
+          `UPDATE "User" SET ${userUpdates.join(", ")}, "updatedAt" = NOW() WHERE id = $${paramIndex}`,
+          userValues
+        );
+      }
+
+      updatedUser = await getUserById(session.user.id);
+    }
+
+    // Update business settings if provided
     const updatePayload: Record<string, any> = {};
 
     if (data.companyName) updatePayload.name = data.companyName;
@@ -129,6 +163,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       success: true,
       business: updated,
+      user: updatedUser,
     });
   } catch (error) {
     console.error("PATCH /api/settings error:", error);

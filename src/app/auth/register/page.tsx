@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import "@/src/app/landing.css";
 
@@ -19,9 +19,16 @@ function GoogleIcon() {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,6 +37,7 @@ export default function RegisterPage() {
 
     const formData = new FormData(event.currentTarget);
     const email = (formData.get("email") as string)?.trim();
+    const phone = (formData.get("phone") as string)?.trim();
     const password = formData.get("password") as string;
     const confirm = formData.get("confirm") as string;
 
@@ -46,6 +54,7 @@ export default function RegisterPage() {
         body: JSON.stringify({
           name: formData.get("name"),
           email,
+          phone,
           password,
         }),
       });
@@ -147,6 +156,19 @@ export default function RegisterPage() {
                 type="email"
                 placeholder="operator@company.com"
                 required
+                className="az-field-input"
+              />
+            </div>
+
+            <div className="az-field">
+              <label htmlFor="phone" className="az-field-label">
+                Contact No. // Phone Number
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+91 98765 43210"
                 className="az-field-input"
               />
             </div>

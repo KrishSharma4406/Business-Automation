@@ -59,33 +59,46 @@ export default function CustomersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-  // Also check leads to dynamically populate customers if available
-  useEffect(() => {
-    fetch("/api/leads")
+  const loadCustomers = () => {
+    fetch("/api/customers")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.leads && data.leads.length > 0) {
-          const qualified = data.leads
-            .filter((l: any) => (l.aiScore ?? 0) >= 80)
-            .map((l: any, idx: number) => ({
-              id: `lead-cust-${l.id.slice(0, 8)}`,
-              name: l.name,
-              email: l.email || "operator@autozip.local",
-              phone: l.phone || "+91 90000 00000",
-              company: l.company || "Independent Enterprise",
-              tier: (idx % 2 === 0 ? "Enterprise" : "Growth") as Customer["tier"],
-              status: "Active" as Customer["status"],
-              channel: l.source || "WhatsApp Cloud API",
-              createdAt: l.createdAt,
-            }));
-
-          if (qualified.length > 0) {
-            setCustomers([...qualified, ...DEFAULT_CUSTOMERS]);
-          }
+        if (data?.customers && Array.isArray(data.customers) && data.customers.length > 0) {
+          const mapped: Customer[] = data.customers.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            email: c.email || "—",
+            phone: c.phone || "—",
+            company: c.company || "Independent Enterprise",
+            tier: "Enterprise" as const,
+            status: (c.status?.toLowerCase() === "active" ? "Active" : c.status?.toLowerCase() === "onboarding" ? "Onboarding" : "Paused") as Customer["status"],
+            channel: "Inbound Pipeline",
+            createdAt: c.createdAt,
+          }));
+          setCustomers(mapped);
         }
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadCustomers();
   }, []);
+
+  const handleDeleteCustomer = async (id: string) => {
+    if (!confirm("Delete this customer node?")) return;
+    try {
+      const res = await fetch(`/api/customers/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setCustomers((prev) => prev.filter((c) => c.id !== id));
+        if (selectedCustomer?.id === id) {
+          setSelectedCustomer(null);
+        }
+      }
+    } catch (e) {
+      console.error("Delete customer error:", e);
+    }
+  };
 
   const filtered = customers.filter((c) => {
     const matchesSearch =
@@ -347,6 +360,15 @@ export default function CustomersPage() {
                         >
                           Configure
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCustomer(cust.id)}
+                          className="az-btn-secondary"
+                          style={{ fontSize: "11px", padding: "3px 8px", color: "var(--az-rose)" }}
+                          title="Delete customer"
+                        >
+                          ✕
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -414,7 +436,15 @@ export default function CustomersPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCustomer(selectedCustomer.id)}
+                    className="az-btn-secondary"
+                    style={{ fontSize: "12px", padding: "8px 14px", color: "var(--az-rose)", borderColor: "var(--az-rose)" }}
+                  >
+                    Delete Account
+                  </button>
                   <Link
                     href={`/dashboard/customers/${selectedCustomer.id}/edit`}
                     className="az-btn-primary"

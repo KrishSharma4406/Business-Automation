@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import Footer from "@/src/components/footer";
 import "./landing.css";
 
@@ -181,9 +182,18 @@ const TICKER_ITEMS = [
    MAIN LANDING PAGE
    ========================================================================== */
 export default function LandingPage() {
+  const { data: session } = useSession();
   const [activeBlueprint, setActiveBlueprint] = useState(0);
   const [ledger, setLedger] = useState<LedgerItem[]>(INITIAL_LEDGER);
   const [requestCount, setRequestCount] = useState(148);
+
+  const userName = session?.user?.name || "Operator";
+  const userInitials = userName
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   // Scroll reveal observer
   useEffect(() => {
@@ -310,13 +320,92 @@ export default function LandingPage() {
             <li><a href="#faq" className="az-nav-link">FAQ</a></li>
           </ul>
 
-          <div className="az-nav-actions">
-            <Link href="/auth/login" className="az-btn-secondary">
-              Sign in
-            </Link>
-            <Link href="/auth/register" className="az-btn-primary">
-              Launch Node
-            </Link>
+          <div className="az-nav-actions" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {session?.user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "4px 10px 4px 6px",
+                    background: "rgba(16, 185, 129, 0.08)",
+                    border: "1px solid var(--az-border-bright)",
+                    borderRadius: "6px",
+                    textDecoration: "none",
+                    transition: "all 0.15s ease",
+                  }}
+                  title="Signed In Operator"
+                >
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "4px",
+                      background: "linear-gradient(135deg, var(--az-emerald), #059669)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontFamily: "var(--az-font-mono)",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "#ffffff",
+                    }}
+                  >
+                    {userInitials}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
+                    <span
+                      style={{
+                        fontFamily: "var(--az-font-mono)",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "#ffffff",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {userName}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "var(--az-font-mono)",
+                        fontSize: "9px",
+                        color: "var(--az-emerald)",
+                        lineHeight: 1.2,
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      ● ACTIVE
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/dashboard"
+                  className="az-btn-primary"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 14px",
+                    fontSize: "12px",
+                  }}
+                >
+                  <span>Dashboard Console</span>
+                  <span style={{ color: "var(--az-emerald)" }}>→</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login" className="az-btn-secondary">
+                  Sign in
+                </Link>
+                <Link href="/auth/register" className="az-btn-primary">
+                  Launch Node
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -344,9 +433,24 @@ export default function LandingPage() {
           </p>
 
           <div className="az-hero-cta az-reveal">
-            <Link href="/auth/register" className="az-btn-primary">
-              Launch Your Node
-            </Link>
+            {session?.user ? (
+              <Link
+                href="/dashboard"
+                className="az-btn-primary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span>Open Dashboard Console</span>
+                <span style={{ color: "var(--az-emerald)" }}>→</span>
+              </Link>
+            ) : (
+              <Link href="/auth/register" className="az-btn-primary">
+                Launch Your Node
+              </Link>
+            )}
             <a href="#architecture" className="az-btn-secondary">
               Inspect Architecture
             </a>
@@ -775,12 +879,29 @@ export default function LandingPage() {
               real-time AI workflows built directly on production-grade infrastructure.
             </p>
             <div className="az-cta-actions">
-              <Link href="/auth/register" className="az-btn-primary">
-                Create Workspace
-              </Link>
-              <Link href="/auth/login" className="az-btn-secondary">
-                Sign in to Existing Node
-              </Link>
+              {session?.user ? (
+                <Link
+                  href="/dashboard"
+                  className="az-btn-primary"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <span>Open Dashboard Console</span>
+                  <span style={{ color: "var(--az-emerald)" }}>→</span>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/auth/register" className="az-btn-primary">
+                    Create Workspace
+                  </Link>
+                  <Link href="/auth/login" className="az-btn-secondary">
+                    Sign in to Existing Node
+                  </Link>
+                </>
+              )}
             </div>
             <div className="az-cta-badges">
               <span className="az-cta-badge">Postgres 16 Durable Storage</span>

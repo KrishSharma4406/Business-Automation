@@ -5,6 +5,7 @@ import { registerNewUser } from "@/src/lib/auth-db";
 const RegisterSchema = z.object({
   name: z.string().trim().min(1, "Operator or business name is required"),
   email: z.string().trim().email("Please provide a valid email address"),
+  phone: z.string().trim().optional().or(z.literal("")),
   password: z.string().min(8, "Access key password must be at least 8 characters long"),
 });
 
@@ -21,8 +22,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, email, password } = parseResult.data;
-    const user = await registerNewUser({ name, email, password });
+    const { name, email, phone, password } = parseResult.data;
+    const user = await registerNewUser({
+      name,
+      email,
+      phone: phone || null,
+      password,
+    });
 
     return NextResponse.json(
       {

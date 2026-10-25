@@ -3,17 +3,24 @@
 import TopBar from "@/src/components/top-bar";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function SettingsPage() {
+  const { data: session, update: updateSession } = useSession();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [userName, setUserName] = useState("");
+  const [editingUserName, setEditingUserName] = useState(false);
+  const [userPhone, setUserPhone] = useState("");
+  const [editingUserPhone, setEditingUserPhone] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [editingCompany, setEditingCompany] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [userRole, setUserRole] = useState("ADMIN");
+  const [userId, setUserId] = useState("");
   const [activeIntegrations, setActiveIntegrations] = useState(0);
 
   const [webhookUrl, setWebhookUrl] = useState("/api/webhooks/lead");
@@ -35,9 +42,12 @@ export default function SettingsPage() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.settings) {
-          setCompanyName(data.settings.business?.name || "Autoleep Enterprise");
-          setUserEmail(data.settings.user?.email || "operator@autozip.dev");
+          setUserName(data.settings.user?.name || session?.user?.name || "Operator");
+          setUserEmail(data.settings.user?.email || session?.user?.email || "operator@autozip.dev");
+          setUserPhone(data.settings.user?.phone || "");
           setUserRole(data.settings.user?.role || "ADMIN");
+          setUserId(data.settings.user?.id || session?.user?.id || "");
+          setCompanyName(data.settings.business?.name || "Autoleep Enterprise");
           setActiveIntegrations(data.settings.integrations?.activeCount || 0);
 
           if (data.settings.webhook?.fullUrl) {
@@ -53,7 +63,7 @@ export default function SettingsPage() {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [session]);
 
   async function handleSaveCompany() {
     setSaving(true);
@@ -75,6 +85,60 @@ export default function SettingsPage() {
       setTimeout(() => setSuccessMsg(""), 3500);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to update settings");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveUserName() {
+    setSaving(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userName }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update operator name");
+
+      if (updateSession) {
+        await updateSession({ name: userName });
+      }
+
+      setSuccessMsg("Operator username / display name updated successfully");
+      setEditingUserName(false);
+      setTimeout(() => setSuccessMsg(""), 3500);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to update operator name");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveUserPhone() {
+    setSaving(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: userPhone }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update contact number");
+
+      setSuccessMsg("Contact number updated successfully");
+      setEditingUserPhone(false);
+      setTimeout(() => setSuccessMsg(""), 3500);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to update contact number");
     } finally {
       setSaving(false);
     }
@@ -139,6 +203,142 @@ export default function SettingsPage() {
             gap: "16px",
           }}
         >
+          {/* Operator Profile & Identity */}
+          <div className="az-dash-card">
+            <div className="az-dash-card-header">
+              <div className="az-dash-card-title">
+                <span className="az-status-dot" />
+                <span>Operator Profile &amp; Identity</span>
+              </div>
+              <span className="az-tag az-tag-emerald">Signed In</span>
+            </div>
+            <div className="az-dash-card-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <p style={{ fontSize: "12px", color: "var(--az-text-muted)", marginBottom: "4px" }}>
+                Active operator credentials, display name, and account access
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 14px",
+                  borderRadius: "4px",
+                  background: "rgba(22, 26, 32, 0.6)",
+                  border: "1px solid var(--az-border)",
+                }}
+              >
+                <span style={{ fontSize: "12px", color: "var(--az-text-secondary)" }}>Username / Name</span>
+                {editingUserName ? (
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <input
+                      type="text"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      className="az-field-input"
+                      style={{ padding: "4px 8px", fontSize: "12px", width: "160px" }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveUserName}
+                      disabled={saving || !userName.trim()}
+                      className="az-btn-primary"
+                      style={{ fontSize: "11px", padding: "4px 8px" }}
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingUserName(false)}
+                      className="az-btn-secondary"
+                      style={{ fontSize: "11px", padding: "4px 8px" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "12px", color: "#ffffff", fontWeight: 600, fontFamily: "var(--az-font-mono)" }}>
+                      {loading ? "Loading..." : userName}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEditingUserName(true)}
+                      className="az-btn-secondary"
+                      style={{ fontSize: "10px", padding: "2px 6px" }}
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <SettingsRow label="Operator Email" value={loading ? "Loading..." : userEmail} />
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "10px 14px",
+                  borderRadius: "4px",
+                  background: "rgba(22, 26, 32, 0.6)",
+                  border: "1px solid var(--az-border)",
+                }}
+              >
+                <span style={{ fontSize: "12px", color: "var(--az-text-secondary)" }}>Contact No.</span>
+                {editingUserPhone ? (
+                  <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <input
+                      type="tel"
+                      value={userPhone}
+                      onChange={(e) => setUserPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="az-field-input"
+                      style={{ padding: "4px 8px", fontSize: "12px", width: "160px" }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveUserPhone}
+                      disabled={saving}
+                      className="az-btn-primary"
+                      style={{ fontSize: "11px", padding: "4px 8px" }}
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingUserPhone(false)}
+                      className="az-btn-secondary"
+                      style={{ fontSize: "11px", padding: "4px 8px" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "12px", color: userPhone ? "#ffffff" : "var(--az-text-muted)", fontWeight: 600, fontFamily: "var(--az-font-mono)" }}>
+                      {loading ? "Loading..." : userPhone || "Not configured"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEditingUserPhone(true)}
+                      className="az-btn-secondary"
+                      style={{ fontSize: "10px", padding: "2px 6px" }}
+                    >
+                      {userPhone ? "Change" : "Add"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <SettingsRow label="Assigned Role" value={userRole} badge="emerald" />
+              {userId && <SettingsRow label="Node Identifier" value={`USR-${userId.slice(0, 8).toUpperCase()}`} />}
+            </div>
+          </div>
+
           {/* Business Profile */}
           <div className="az-dash-card">
             <div className="az-dash-card-header">

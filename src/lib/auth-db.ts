@@ -5,10 +5,18 @@ import bcrypt from "bcryptjs";
 // Global pool instance to prevent connection leaks across Next.js dev reloads
 const globalForPg = globalThis as unknown as { pgPool?: Pool };
 
+const rawConnectionString =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.DATABASE_URL_UNPOOLED ||
+  "";
+
+const connectionString = rawConnectionString.replace(/^["']|["']$/g, "").trim();
+
 export const pool =
   globalForPg.pgPool ??
   new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
     ssl: { rejectUnauthorized: false },
     max: 10,
     idleTimeoutMillis: 30000,

@@ -26,19 +26,22 @@ export async function getBusinessForUser(
 
   if (business) return business;
 
-  const fallback = await db.orm.public.Business
-    .select("id", "name", "slug")
-    .orderBy((business) => business.createdAt.asc())
-    .first();
+  // Fallback to existing first business only for DEV_AUTH_USER_ID
+  if (process.env.DEV_AUTH_USER_ID && userId === process.env.DEV_AUTH_USER_ID) {
+    const fallback = await db.orm.public.Business
+      .select("id", "name", "slug")
+      .orderBy((business) => business.createdAt.asc())
+      .first();
 
-  if (fallback) return fallback;
+    if (fallback) return fallback;
+  }
 
   try {
     return await db.orm.public.Business.create({
       id: crypto.randomUUID(),
       ownerId: userId,
       name: "Autozip Workspace",
-      slug: `workspace-${userId.slice(0, 8)}`,
+      slug: `workspace-${userId.slice(0, 8)}-${Date.now().toString(36)}`,
     });
   } catch (error) {
     console.error("Failed to auto-provision business:", error);

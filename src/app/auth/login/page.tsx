@@ -49,7 +49,7 @@ function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Authentication failed. Invalid operator credentials.");
+      setError("Invalid email or password.");
       return;
     }
 
@@ -65,7 +65,7 @@ function LoginForm() {
       const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
       await signIn("google", { callbackUrl });
     } catch {
-      setError("Google authentication failed. Try again.");
+      setError("Google sign-in failed. Please try again.");
       setGoogleLoading(false);
     }
   }
@@ -73,68 +73,17 @@ function LoginForm() {
   return (
     <div className="az-auth-card">
       <div className="az-auth-head">
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-          <span className="az-tag az-tag-emerald">
-            <span className="az-status-dot" />
-            NODE ACCESS
-          </span>
-          <span className="az-tag">CORE // SECURE</span>
-        </div>
-        <h1 className="az-auth-title">Authenticate Operator</h1>
-        <p className="az-auth-desc">Enter access credentials to connect to the Autozip runtime workspace.</p>
+        <h1 className="az-auth-title">Sign in</h1>
+        <p className="az-auth-desc">Welcome back. Enter your account details.</p>
       </div>
 
       {error && (
         <div className="az-auth-error">
-          [AUTH_ERROR] {error}
+          {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="az-auth-form">
-        <div className="az-field">
-          <label htmlFor="email" className="az-field-label">
-            Operator Identity // Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@autozip.local"
-            required
-            className="az-field-input"
-          />
-        </div>
-
-        <div className="az-field">
-          <label htmlFor="password" className="az-field-label">
-            Access Key // Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••••••"
-            required
-            className="az-field-input"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="az-auth-submit-btn"
-        >
-          {loading ? "Authenticating Node..." : "Authenticate & Connect"}
-        </button>
-      </form>
-
-      <div className="az-auth-divider">
-        <span>or continue with</span>
-      </div>
-
-      {/* Google OAuth Button — below the form */}
+      {/* Google Sign In */}
       <button
         type="button"
         onClick={handleGoogleSignIn}
@@ -142,18 +91,59 @@ function LoginForm() {
         className="az-google-btn"
       >
         <GoogleIcon />
-        {googleLoading ? "Connecting via Google..." : "Continue with Google"}
+        {googleLoading ? "Signing in..." : "Continue with Google"}
       </button>
+
+      <div className="az-auth-divider">
+        <span>or</span>
+      </div>
+
+      <form onSubmit={handleSubmit} className="az-auth-form">
+        <div className="az-field">
+          <label htmlFor="email" className="az-field-label">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+            className="az-field-input"
+          />
+        </div>
+
+        <div className="az-field">
+          <label htmlFor="password" className="az-field-label">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+            className="az-field-input"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || googleLoading}
+          className="az-auth-submit-btn"
+        >
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
 
       <div className="az-auth-footer">
         <div>
-          New operator?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/auth/register">
-            Initialize Workspace Node
+            Sign up
           </Link>
-        </div>
-        <div style={{ color: "var(--az-text-muted)", fontSize: "10px" }}>
-          TLS 1.3 // Neon Serverless Postgres Encrypted
         </div>
       </div>
     </div>
@@ -167,16 +157,15 @@ export default function LoginPage() {
         <div className="az-auth-nav-inner">
           <Link href="/" className="az-brand">
             <span className="az-brand-name">AUTOZIP</span>
-            <span className="az-brand-spec">SYS.VER 2.4</span>
           </Link>
-          <Link href="/" className="az-btn-secondary" style={{ fontSize: "11px", padding: "6px 12px" }}>
-            Return to Root
+          <Link href="/" className="az-btn-secondary" style={{ fontSize: "12px", padding: "6px 14px" }}>
+            Back
           </Link>
         </div>
       </nav>
 
       <main className="az-auth-main">
-        <Suspense fallback={<div className="az-mono" style={{ color: "var(--az-text-muted)" }}>Loading Access Node...</div>}>
+        <Suspense fallback={<div className="az-mono" style={{ color: "var(--az-text-muted)" }}>Loading...</div>}>
           <LoginForm />
         </Suspense>
       </main>

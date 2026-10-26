@@ -80,7 +80,7 @@ export default function RegisterPage() {
       router.push("/dashboard");
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred during node provisioning.");
+      setError(err.message || "Sign up failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function RegisterPage() {
     try {
       await signIn("google", { callbackUrl: "/dashboard" });
     } catch {
-      setError("Google authentication failed. Try again.");
+      setError("Google sign-in failed. Please try again.");
       setGoogleLoading(false);
     }
   }
@@ -103,10 +103,9 @@ export default function RegisterPage() {
         <div className="az-auth-nav-inner">
           <Link href="/" className="az-brand">
             <span className="az-brand-name">AUTOZIP</span>
-            <span className="az-brand-spec">SYS.VER 2.4</span>
           </Link>
-          <Link href="/" className="az-btn-secondary" style={{ fontSize: "11px", padding: "6px 12px" }}>
-            Return to Root
+          <Link href="/" className="az-btn-secondary" style={{ fontSize: "12px", padding: "6px 14px" }}>
+            Back
           </Link>
         </div>
       </nav>
@@ -114,107 +113,17 @@ export default function RegisterPage() {
       <main className="az-auth-main">
         <div className="az-auth-card">
           <div className="az-auth-head">
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-              <span className="az-tag az-tag-emerald">
-                <span className="az-status-dot" />
-                NEW PROVISIONING
-              </span>
-              <span className="az-tag">WORKSPACE NODE</span>
-            </div>
-            <h1 className="az-auth-title">Deploy Workspace</h1>
-            <p className="az-auth-desc">Provision your isolated Neon PostgreSQL cluster and autonomous ingestion runtime.</p>
+            <h1 className="az-auth-title">Sign up</h1>
+            <p className="az-auth-desc">Create your account to get started.</p>
           </div>
 
           {error && (
             <div className="az-auth-error">
-              [PROVISION_FAILED] {error}
+              {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="az-auth-form">
-            <div className="az-field">
-              <label htmlFor="name" className="az-field-label">
-                Operator / Business Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Acme Autonomous Ops"
-                required
-                className="az-field-input"
-              />
-            </div>
-
-            <div className="az-field">
-              <label htmlFor="email" className="az-field-label">
-                Operator Identity // Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="operator@company.com"
-                required
-                className="az-field-input"
-              />
-            </div>
-
-            <div className="az-field">
-              <label htmlFor="phone" className="az-field-label">
-                Contact No. // Phone Number
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="+91 98765 43210"
-                className="az-field-input"
-              />
-            </div>
-
-            <div className="az-field">
-              <label htmlFor="password" className="az-field-label">
-                Access Key // Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Minimum 8 characters"
-                required
-                className="az-field-input"
-              />
-            </div>
-
-            <div className="az-field">
-              <label htmlFor="confirm" className="az-field-label">
-                Confirm Access Key
-              </label>
-              <input
-                id="confirm"
-                name="confirm"
-                type="password"
-                placeholder="Confirm password"
-                required
-                className="az-field-input"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="az-auth-submit-btn"
-            >
-              {loading ? "Provisioning & Connecting..." : "Deploy Workspace Node"}
-            </button>
-          </form>
-
-          <div className="az-auth-divider">
-            <span>or deploy with</span>
-          </div>
-
-          {/* Google OAuth Button — below the form */}
+          {/* Google Sign In */}
           <button
             type="button"
             onClick={handleGoogleSignUp}
@@ -222,18 +131,98 @@ export default function RegisterPage() {
             className="az-google-btn"
           >
             <GoogleIcon />
-            {googleLoading ? "Provisioning via Google..." : "Deploy with Google"}
+            {googleLoading ? "Signing in..." : "Continue with Google"}
           </button>
+
+          <div className="az-auth-divider">
+            <span>or</span>
+          </div>
+
+          <form onSubmit={handleSubmit} className="az-auth-form">
+            <div className="az-field">
+              <label htmlFor="name" className="az-field-label">
+                Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Your name or company"
+                required
+                className="az-field-input"
+              />
+            </div>
+
+            <div className="az-field">
+              <label htmlFor="email" className="az-field-label">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+                className="az-field-input"
+              />
+            </div>
+
+            <div className="az-field">
+              <label htmlFor="phone" className="az-field-label">
+                Phone (optional)
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="+1 234 567 8900"
+                className="az-field-input"
+              />
+            </div>
+
+            <div className="az-field">
+              <label htmlFor="password" className="az-field-label">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="At least 8 characters"
+                required
+                className="az-field-input"
+              />
+            </div>
+
+            <div className="az-field">
+              <label htmlFor="confirm" className="az-field-label">
+                Confirm Password
+              </label>
+              <input
+                id="confirm"
+                name="confirm"
+                type="password"
+                placeholder="Repeat password"
+                required
+                className="az-field-input"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || googleLoading}
+              className="az-auth-submit-btn"
+            >
+              {loading ? "Creating account..." : "Sign up"}
+            </button>
+          </form>
 
           <div className="az-auth-footer">
             <div>
-              Existing operator?{" "}
+              Already have an account?{" "}
               <Link href="/auth/login">
-                Authenticate Existing Node
+                Sign in
               </Link>
-            </div>
-            <div style={{ color: "var(--az-text-muted)", fontSize: "10px" }}>
-              Zero Lock-in // Multi-tenant PostgreSQL Storage Segregation
             </div>
           </div>
         </div>

@@ -42,7 +42,7 @@ export default function RegisterPage() {
     const confirm = formData.get("confirm") as string;
 
     if (password !== confirm) {
-      setError("Access keys do not match. Verify password entry.");
+      setError("Passwords do not match.");
       setLoading(false);
       return;
     }
@@ -62,7 +62,7 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Workspace node provisioning failed.");
+        throw new Error(data.error || "Registration failed.");
       }
 
       // Automatically authenticate session and go directly to main dashboard
@@ -147,7 +147,7 @@ export default function RegisterPage() {
                 id="name"
                 name="name"
                 type="text"
-                placeholder="Your name or company"
+                placeholder="Your name"
                 required
                 className="az-field-input"
               />
@@ -196,7 +196,7 @@ export default function RegisterPage() {
 
             <div className="az-field">
               <label htmlFor="confirm" className="az-field-label">
-                Confirm Password
+                Confirm password
               </label>
               <input
                 id="confirm"

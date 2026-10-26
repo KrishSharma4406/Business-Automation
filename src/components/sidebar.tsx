@@ -128,7 +128,6 @@ export default function Sidebar() {
         <span className="az-status-dot" title="Runtime Active" />
       </div>
 
-      {/* User Profile Section — below the logo */}
       <div
         style={{
           padding: "12px 14px",

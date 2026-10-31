@@ -4,7 +4,7 @@ import { authConfig } from "@/src/lib/auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-export default auth((request) => {
+export const proxy = auth((request) => {
   if (!request.auth) {
     const loginUrl = new URL(
       "/auth/login",
@@ -23,3 +23,4 @@ export default auth((request) => {
 export const config = {
   matcher: ["/dashboard/:path*"],
 };
+

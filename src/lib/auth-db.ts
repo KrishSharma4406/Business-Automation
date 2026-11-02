@@ -6,10 +6,7 @@ import bcrypt from "bcryptjs";
 const globalForPg = globalThis as unknown as { pgPool?: Pool };
 
 const rawConnectionString =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.DATABASE_URL_UNPOOLED ||
-  "";
+  process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL_UNPOOLED || "";
 
 const connectionString = rawConnectionString.replace(/^["']|["']$/g, "").trim();
 
@@ -145,11 +142,6 @@ export async function registerNewUser(params: {
     client.release();
   }
 }
-
-/**
- * Find an existing user by email, or create a new one for OAuth sign-in.
- * Also provisions a Business, Workspace, and WorkspaceMember if creating.
- */
 export async function findOrCreateOAuthUser(params: {
   email: string;
   name: string | null;

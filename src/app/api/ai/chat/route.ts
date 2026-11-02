@@ -25,9 +25,6 @@ async function fetchBusinessContext(
     businessId: string
 ): Promise<BusinessContext | undefined> {
     try {
-        /*
-         * Business information
-         */
         const business = await db.orm.public.Business
             .where({ id: businessId })
             .select(
@@ -60,9 +57,6 @@ async function fetchBusinessContext(
             )
             .all();
 
-        /*
-         * Customers
-         */
         const customers = await db.orm.public.Customer
             .where({ businessId })
             .orderBy((c) => c.createdAt.desc())
@@ -77,9 +71,6 @@ async function fetchBusinessContext(
             )
             .all();
 
-        /*
-         * Automations
-         */
         const automations = await db.orm.public.Automation
             .where({ businessId })
             .select(
@@ -92,44 +83,29 @@ async function fetchBusinessContext(
             )
             .all();
 
-        /*
-         * Integrations belong to the workspace.
-         */
         const workspaceMember =
             await getWorkspaceForUser(userId);
 
-        const integrations =
-            workspaceMember?.workspaceId
-                ? await db.orm.public.Integration
+        const integrations = workspaceMember?.workspaceId ? await db.orm.public.Integration
                       .where({
-                          workspaceId:
-                              workspaceMember.workspaceId,
+                          workspaceId:workspaceMember.workspaceId,
                       })
                       .select(
                           "provider",
                           "name",
                           "status"
                       )
-                      .all()
-                : [];
+                      .all():[];
 
         return {
             business: {
-                name:
-                    business?.name ||
-                    "Main Business",
+                name:business?.name ||"Main Business",
 
-                industry:
-                    business?.industry ||
-                    null,
+                industry:business?.industry ||null,
 
-                description:
-                    business?.description ||
-                    null,
+                description:business?.description ||null,
 
-                website:
-                    business?.website ||
-                    null,
+                website:business?.website ||null,
             },
 
             leads: leads.map((lead) => ({

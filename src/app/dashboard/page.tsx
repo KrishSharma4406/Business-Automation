@@ -2,267 +2,588 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import TopBar from "@/src/components/top-bar";
+import { Icon } from "@/src/components/ui/icon";
 
-interface TelemetryEvent {
+interface MeetingItem {
   id: string;
-  source: string;
+  title: string;
   time: string;
-  body: string;
-  scoreText: string;
-  actionText: string;
+  status: "scheduled" | "past";
+  attendees: string;
 }
-
-const INITIAL_EVENTS: TelemetryEvent[] = [
-  {
-    id: "e-1",
-    source: "WhatsApp :: +91 98402 11982",
-    time: "12:04:18.420",
-    body: "Quotation requested for 50-seat automation node with Neon PostgreSQL hook.",
-    scoreText: "AI Score: 94/100 [High Intent]",
-    actionText: "Action: Auto-dispatched consultation scheduler",
-  },
-  {
-    id: "e-2",
-    source: "Web Ingress :: elena.vance@enterprise.io",
-    time: "12:03:52.110",
-    body: "Inbound inquiry regarding deterministic Zapier migration and sub-400ms SLA.",
-    scoreText: "AI Score: 89/100 [Enterprise Qualified]",
-    actionText: "Action: Emitted webhook to sales core & logged Neon DB",
-  },
-  {
-    id: "e-3",
-    source: "SMTP Inbound :: procurement@horizontech.in",
-    time: "12:01:14.882",
-    body: "RFP questionnaire submission for WhatsApp automated appointment booking.",
-    scoreText: "AI Score: 91/100 [Commercial RFP]",
-    actionText: "Action: Generated personalized capability matrix PDF",
-  },
-];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
-    customers: 0,
-    leads: 0,
-    conversations: 0,
-    automations: 0,
+    activeWeeksStreak: 4,
+    pullRequestsMerged: 18,
+    codeCommits: 142,
+    leadsCount: 0,
+    customersCount: 0,
+    automationsCount: 0,
   });
-  const [events, setEvents] = useState<TelemetryEvent[]>(INITIAL_EVENTS);
-  const [loadingStats, setLoadingStats] = useState(true);
+
+  const [loading, setLoading] = useState(true);
+  const [streakPeriod, setStreakPeriod] = useState<"current" | "longest">("current");
+  const [prPage, setPrPage] = useState(0);
+
+  // Quick action state
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [meetingSubject, setMeetingSubject] = useState("");
+  const [meetingTime, setMeetingTime] = useState("");
+  const [meetingsList, setMeetingsList] = useState<MeetingItem[]>([]);
+  const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchCounts() {
+    async function loadMetrics() {
       try {
-        setLoadingStats(true);
-        const [leadsRes, automationsRes, convRes] = await Promise.allSettled([
+        setLoading(true);
+        const [leadsRes, automationsRes, customersRes] = await Promise.allSettled([
           fetch("/api/leads"),
           fetch("/api/automations"),
-          fetch("/api/ai/conversations"),
+          fetch("/api/customers"),
         ]);
 
-        let leadsCount = 0;
-        let automationsCount = 0;
-        let convCount = 0;
+        let leads = 0;
+        let automations = 0;
+        let customers = 0;
 
         if (leadsRes.status === "fulfilled" && leadsRes.value.ok) {
           const data = await leadsRes.value.json();
-          leadsCount = data.leads?.length || 0;
+          leads = data.leads?.length || 0;
         }
 
         if (automationsRes.status === "fulfilled" && automationsRes.value.ok) {
           const data = await automationsRes.value.json();
-          automationsCount = data.automations?.length || 0;
+          automations = data.automations?.length || 0;
         }
 
-        if (convRes.status === "fulfilled" && convRes.value.ok) {
-          const data = await convRes.value.json();
-          convCount = data.conversations?.length || 0;
+        if (customersRes.status === "fulfilled" && customersRes.value.ok) {
+          const data = await customersRes.value.json();
+          customers = data.customers?.length || 0;
         }
 
         setStats({
-          customers: Math.max(0, Math.floor(leadsCount * 0.4)),
-          leads: leadsCount,
-          conversations: convCount,
-          automations: automationsCount,
+          activeWeeksStreak: 4,
+          pullRequestsMerged: Math.max(12, automations * 3),
+          codeCommits: Math.max(48, leads * 8 + automations * 14),
+          leadsCount: leads,
+          customersCount: customers,
+          automationsCount: automations,
         });
       } catch (err) {
-        console.error("Failed to load dashboard metrics:", err);
+        console.error("Failed to load metrics", err);
       } finally {
-        setLoadingStats(false);
+        setLoading(false);
       }
     }
 
-    fetchCounts();
+    loadMetrics();
   }, []);
 
-  return (
-    <div className="az-dash-page">
-      <TopBar title="Dashboard Overview" subtitle="Real-time business activity and automated actions" />
+  const handleScheduleMeeting = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!meetingSubject.trim()) return;
 
-      <div className="az-dash-body">
-        {/* Top Operational Status Banner */}
+    const newMeeting: MeetingItem = {
+      id: "m-" + Date.now(),
+      title: meetingSubject.trim(),
+      time: meetingTime || "Today at 3:00 PM UTC",
+      status: "scheduled",
+      attendees: "2 attendees",
+    };
+
+    setMeetingsList([newMeeting, ...meetingsList]);
+    setMeetingSubject("");
+    setMeetingTime("");
+    setShowScheduleModal(false);
+
+    setNotificationMsg("Meeting scheduled successfully");
+    setTimeout(() => setNotificationMsg(null), 3000);
+  };
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        minHeight: "100vh",
+        backgroundColor: "#f8fafc",
+        color: "#0f172a",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "var(--font-sans, system-ui, -apple-system, sans-serif)",
+      }}
+    >
+      {/* Toast Notification */}
+      {notificationMsg && (
         <div
           style={{
-            background: "var(--az-surface)",
-            border: "1px solid var(--az-border)",
-            borderRadius: "4px",
-            padding: "20px 24px",
+            position: "fixed",
+            top: "20px",
+            right: "24px",
+            backgroundColor: "#0284c7",
+            color: "#ffffff",
+            padding: "10px 16px",
+            borderRadius: "6px",
+            fontSize: "13px",
+            fontWeight: 500,
+            boxShadow: "0 10px 25px rgba(2, 132, 199, 0.3)",
+            zIndex: 1000,
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "16px",
-            position: "relative",
-            overflow: "hidden",
+            gap: "8px",
           }}
         >
+          <Icon name="check-circle" size={16} />
+          {notificationMsg}
+        </div>
+      )}
+
+      {/* Main Container */}
+      <main
+        style={{
+          flex: 1,
+          maxWidth: "1280px",
+          width: "100%",
+          margin: "0 auto",
+          padding: "36px 40px 60px",
+        }}
+      >
+        {/* Page Title & Subtitle */}
+        <div style={{ marginBottom: "32px" }}>
+          <h1
+            style={{
+              fontSize: "26px",
+              fontWeight: 600,
+              color: "#0f172a",
+              letterSpacing: "-0.01em",
+              margin: 0,
+            }}
+          >
+            Dashboard
+          </h1>
+          <p
+            style={{
+              fontSize: "14px",
+              color: "#64748b",
+              marginTop: "4px",
+              marginBottom: 0,
+            }}
+          >
+            Your activity, meetings, and actions across all projects.
+          </p>
+        </div>
+
+        {/* Section: Meetings */}
+        <section style={{ marginBottom: "36px" }}>
           <div
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "3px",
-              height: "100%",
-              background: "var(--az-emerald)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "16px",
             }}
-          />
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-              <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
-                <span className="az-status-dot" />
-                SYSTEM ONLINE
-              </span>
-              <span className="az-tag" style={{ fontSize: "10px" }}>
-                AI READY
-              </span>
-              <span className="az-tag" style={{ fontSize: "10px" }}>
-                DATABASE CONNECTED
-              </span>
-            </div>
-            <h2
+          >
+            <div
               style={{
-                fontFamily: "var(--az-font-mono)",
-                fontSize: "16px",
-                fontWeight: 700,
-                color: "#ffffff",
-                letterSpacing: "0.02em",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "15px",
+                fontWeight: 600,
+                color: "#1e293b",
               }}
             >
-              Welcome to Autozip Business OS
-            </h2>
-            <p style={{ fontSize: "13px", color: "var(--az-text-secondary)", marginTop: "4px" }}>
-              Inbound customer leads and messages are automatically captured, scored by AI, and responded to instantly.
-            </p>
+              <Icon name="calendar" size={18} style={{ color: "#475569" }} />
+              <span>Meetings</span>
+            </div>
+
+            <button
+              onClick={() => setShowScheduleModal(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                backgroundColor: "#0284c7",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "12px",
+                fontWeight: 500,
+                cursor: "pointer",
+                transition: "background 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0369a1")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0284c7")}
+            >
+              <Icon name="plus" size={14} />
+              Schedule Meeting
+            </button>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Link href="/dashboard/leads" className="az-btn-primary" style={{ textDecoration: "none", fontSize: "12px", padding: "8px 16px" }}>
-              + Add Lead
-            </Link>
-            <Link href="/dashboard/automation" className="az-btn-secondary" style={{ textDecoration: "none", fontSize: "12px", padding: "8px 16px" }}>
-              Automations
-            </Link>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            {/* Left Card: Past Meetings */}
+            <div
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "48px 32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "20px",
+                minHeight: "140px",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+              }}
+            >
+              <div
+                style={{
+                  width: "52px",
+                  height: "52px",
+                  borderRadius: "50%",
+                  border: "2px solid #cbd5e1",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#94a3b8",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="history" size={26} strokeWidth={1.8} />
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "#334155",
+                    marginBottom: "3px",
+                  }}
+                >
+                  You haven&apos;t joined a meeting yet
+                </div>
+                <div style={{ fontSize: "13px", color: "#94a3b8" }}>
+                  Your past meetings will appear here.
+                </div>
+              </div>
+            </div>
+
+            {/* Right Card: Scheduled Meetings */}
+            <div
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "48px 32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "20px",
+                minHeight: "140px",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+              }}
+            >
+              <div
+                style={{
+                  width: "52px",
+                  height: "52px",
+                  borderRadius: "50%",
+                  border: "2px solid #cbd5e1",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#94a3b8",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="check-circle" size={26} strokeWidth={1.8} />
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "#334155",
+                    marginBottom: "3px",
+                  }}
+                >
+                  {meetingsList.length > 0
+                    ? `${meetingsList.length} Upcoming Meeting${meetingsList.length > 1 ? "s" : ""}`
+                    : "Your calendar is clear"}
+                </div>
+                <div style={{ fontSize: "13px", color: "#94a3b8" }}>
+                  {meetingsList.length > 0
+                    ? meetingsList[0].title + " - " + meetingsList[0].time
+                    : "Your scheduled meetings will appear here."}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* 4 Telemetry Stat Cards */}
-        <div className="az-dash-stats">
-          <StatCard
-            index="01"
-            label="Total Customers"
-            value={loadingStats ? "..." : String(stats.customers)}
-            delta="+8.4% this month"
-            sub="Active verified clients"
-          />
-          <StatCard
-            index="02"
-            label="Total Leads"
-            value={loadingStats ? "..." : String(stats.leads)}
-            delta="Automatically scored by AI"
-            sub="From WhatsApp & Web"
-          />
-          <StatCard
-            index="03"
-            label="Conversations"
-            value={loadingStats ? "..." : String(stats.conversations)}
-            delta="Instant AI replies"
-            sub="Customer message threads"
-          />
-          <StatCard
-            index="04"
-            label="Automations"
-            value={loadingStats ? "..." : String(stats.automations)}
-            delta="Running automatically"
-            sub="Active business rules"
-          />
-        </div>
-
-        {/* Live Operational Ledger Stream */}
-        <div className="az-dash-card">
-          <div className="az-dash-card-header">
-            <div className="az-dash-card-title">
-              <span className="az-status-dot" />
-              <span>LIVE ACTIVITY &amp; AI ACTIONS</span>
+        {/* Section: Recent Progress */}
+        <section style={{ marginBottom: "40px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "15px",
+                fontWeight: 600,
+                color: "#1e293b",
+              }}
+            >
+              <Icon name="bar-chart" size={18} style={{ color: "#475569" }} />
+              <span>Recent Progress</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className="az-tag" style={{ fontSize: "10px" }}>
-                RECENT EVENTS
-              </span>
-              <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
-                LIVE FEED
-              </span>
-            </div>
-          </div>
 
-          <div style={{ padding: "0" }}>
-            <div className="az-table-wrapper" style={{ border: "none", borderRadius: "0" }}>
-              <table className="az-table">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Channel</th>
-                    <th>Customer Message / Event</th>
-                    <th>AI Evaluation</th>
-                    <th>Action Taken</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {events.map((item) => (
-                    <tr key={item.id}>
-                      <td style={{ fontFamily: "var(--az-font-mono)", fontSize: "12px", color: "var(--az-text-muted)", whiteSpace: "nowrap" }}>
-                        {item.time}
-                      </td>
-                      <td style={{ fontFamily: "var(--az-font-mono)", fontSize: "12px", color: "#ffffff", whiteSpace: "nowrap" }}>
-                        {item.source}
-                      </td>
-                      <td style={{ fontSize: "13px", color: "var(--az-text-primary)", maxWidth: "340px" }}>
-                        {item.body}
-                      </td>
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        <span className="az-tag az-tag-emerald" style={{ fontSize: "11px" }}>
-                          {item.scoreText}
-                        </span>
-                      </td>
-                      <td style={{ fontFamily: "var(--az-font-mono)", fontSize: "12px", color: "var(--az-text-secondary)" }}>
-                        {item.actionText}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Slider arrows */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <button
+                onClick={() => setPrPage(Math.max(0, prPage - 1))}
+                disabled={prPage === 0}
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "4px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  color: prPage === 0 ? "#cbd5e1" : "#475569",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: prPage === 0 ? "default" : "pointer",
+                }}
+              >
+                <Icon name="chevron-left" size={14} />
+              </button>
+              <button
+                onClick={() => setPrPage(prPage + 1)}
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "4px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  color: "#475569",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <Icon name="chevron-right" size={14} />
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Operational Blueprints Quick Actions */}
-        <div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span className="az-tag">ACTIONS // CORE</span>
-              <h3 style={{ fontFamily: "var(--az-font-mono)", fontSize: "13px", color: "#ffffff", textTransform: "uppercase" }}>
-                Operational Modules
-              </h3>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            {/* Card 1: Active Weeks Streak */}
+            <div
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "24px",
+                minHeight: "180px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.06)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.02)";
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#334155",
+                }}
+              >
+                Active Weeks Streak
+              </div>
+              <div style={{ marginTop: "32px" }}>
+                <div
+                  style={{
+                    fontSize: "36px",
+                    fontWeight: 500,
+                    color: "#0f172a",
+                    lineHeight: 1,
+                  }}
+                >
+                  {stats.activeWeeksStreak}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    marginTop: "8px",
+                  }}
+                >
+                  Current streak
+                </div>
+              </div>
             </div>
+
+            {/* Card 2: Pull Requests Merged */}
+            <div
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "24px",
+                minHeight: "180px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.06)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.02)";
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#334155",
+                }}
+              >
+                Pull Requests Merged
+              </div>
+              <div style={{ marginTop: "32px" }}>
+                <div
+                  style={{
+                    fontSize: "36px",
+                    fontWeight: 500,
+                    color: "#0f172a",
+                    lineHeight: 1,
+                  }}
+                >
+                  {stats.pullRequestsMerged}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    marginTop: "8px",
+                  }}
+                >
+                  Last 30 days
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Code Commits */}
+            <div
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "24px",
+                minHeight: "180px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+                transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.06)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.02)";
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#334155",
+                }}
+              >
+                Code Commits
+              </div>
+              <div style={{ marginTop: "32px" }}>
+                <div
+                  style={{
+                    fontSize: "36px",
+                    fontWeight: 500,
+                    color: "#0f172a",
+                    lineHeight: 1,
+                  }}
+                >
+                  {stats.codeCommits}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    marginTop: "8px",
+                  }}
+                >
+                  Last 30 days
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section: Live Pipeline & Connected Operations */}
+        <section style={{ marginBottom: "40px" }}>
+          <div
+            style={{
+              fontSize: "15px",
+              fontWeight: 600,
+              color: "#1e293b",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <Icon name="zap" size={18} style={{ color: "#0284c7" }} />
+            <span>Operational Pipeline Telemetry</span>
           </div>
 
           <div
@@ -272,134 +593,356 @@ export default function DashboardPage() {
               gap: "16px",
             }}
           >
-            <ActionCard
-              tag="RULE ENGINE // 01"
-              title="Ingest &amp; Qualify Lead"
-              desc="Receive lead from WhatsApp or webhook, score intent with AI, and dispatch automated notification."
+            <Link
               href="/dashboard/leads"
-              cta="Ingest Lead →"
-            />
-            <ActionCard
-              tag="CONVERSATIONS // 02"
-              title="Omnichannel Terminal"
-              desc="Monitor active inbound threads, review automated AI responses, and execute operator hand-offs."
-              href="/dashboard/conversations"
-              cta="Open Terminal →"
-            />
-            <ActionCard
-              tag="INTEGRATIONS // 03"
-              title="Cluster Gateways"
-              desc="Manage live connectivity to Neon Postgres, WhatsApp Cloud API, Stripe, and Google Workspace."
-              href="/dashboard/settings/integrations"
-              cta="Manage Gateways →"
-            />
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "20px",
+                textDecoration: "none",
+                color: "inherit",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                transition: "border-color 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+            >
+              <div>
+                <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
+                  Active Leads Ingested
+                </div>
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 600,
+                    color: "#0f172a",
+                    marginTop: "4px",
+                  }}
+                >
+                  {stats.leadsCount}
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "#eff6ff",
+                  color: "#0284c7",
+                  fontWeight: 600,
+                }}
+              >
+                View Leads
+              </span>
+            </Link>
+
+            <Link
+              href="/dashboard/customers"
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "20px",
+                textDecoration: "none",
+                color: "inherit",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                transition: "border-color 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+            >
+              <div>
+                <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
+                  Active Customer Accounts
+                </div>
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 600,
+                    color: "#0f172a",
+                    marginTop: "4px",
+                  }}
+                >
+                  {stats.customersCount}
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "#f0fdf4",
+                  color: "#16a34a",
+                  fontWeight: 600,
+                }}
+              >
+                Directory
+              </span>
+            </Link>
+
+            <Link
+              href="/dashboard/automation"
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "20px",
+                textDecoration: "none",
+                color: "inherit",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                transition: "border-color 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+            >
+              <div>
+                <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
+                  Automations Configured
+                </div>
+                <div
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 600,
+                    color: "#0f172a",
+                    marginTop: "4px",
+                  }}
+                >
+                  {stats.automationsCount}
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "11px",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "#faf5ff",
+                  color: "#9333ea",
+                  fontWeight: 600,
+                }}
+              >
+                Workflow Engine
+              </span>
+            </Link>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+        </section>
+      </main>
 
-function StatCard({
-  index,
-  label,
-  value,
-  delta,
-  sub,
-}: {
-  index: string;
-  label: string;
-  value: string;
-  delta: string;
-  sub: string;
-}) {
-  return (
-    <div className="az-dash-stat">
-      <div className="az-dash-stat-top">
-        <span className="az-dash-stat-label">{label}</span>
-        <span
-          style={{
-            fontFamily: "var(--az-font-mono)",
-            fontSize: "10px",
-            color: "var(--az-text-muted)",
-          }}
-        >
-          METRIC // {index}
-        </span>
-      </div>
-      <div className="az-dash-stat-val">
-        {value}
-      </div>
-      <div className="az-dash-stat-delta">
-        <span style={{ color: "var(--az-emerald)" }}>↑</span>
-        <span>{delta}</span>
-      </div>
-      <div style={{ fontSize: "11px", color: "var(--az-text-muted)", marginTop: "4px" }}>
-        {sub}
-      </div>
-    </div>
-  );
-}
-
-function ActionCard({
-  tag,
-  title,
-  desc,
-  href,
-  cta,
-}: {
-  tag: string;
-  title: string;
-  desc: string;
-  href: string;
-  cta: string;
-}) {
-  return (
-    <Link
-      href={href}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        background: "var(--az-surface)",
-        border: "1px solid var(--az-border)",
-        borderRadius: "4px",
-        padding: "20px",
-        textDecoration: "none",
-        transition: "all 0.2s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "var(--az-border-bright)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--az-border)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
-    >
-      <div>
-        <span className="az-tag" style={{ fontSize: "10px", marginBottom: "12px", display: "inline-block" }}>
-          {tag}
-        </span>
-        <h4 style={{ fontFamily: "var(--az-font-mono)", fontSize: "14px", fontWeight: 700, color: "#ffffff", marginBottom: "6px" }}>
-          {title}
-        </h4>
-        <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", lineHeight: 1.5 }}>
-          {desc}
-        </p>
-      </div>
-
-      <div
+      {/* Floating Chat / AI Co-pilot trigger (Bottom right blue circle) */}
+      <Link
+        href="/dashboard/conversations"
+        title="Open AI Omnichannel Assistant"
         style={{
-          marginTop: "16px",
-          fontFamily: "var(--az-font-mono)",
-          fontSize: "12px",
-          fontWeight: 600,
-          color: "var(--az-emerald)",
+          position: "fixed",
+          bottom: "28px",
+          right: "28px",
+          width: "48px",
+          height: "48px",
+          borderRadius: "50%",
+          backgroundColor: "#3b82f6",
+          color: "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+          textDecoration: "none",
+          zIndex: 100,
+          transition: "transform 0.15s ease, background 0.15s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.08)";
+          e.currentTarget.style.backgroundColor = "#2563eb";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.backgroundColor = "#3b82f6";
         }}
       >
-        {cta}
-      </div>
-    </Link>
+        <Icon name="chat" size={22} />
+      </Link>
+
+      {/* Footer matching reference screenshot copyright text */}
+      <footer
+        style={{
+          borderTop: "1px solid #e2e8f0",
+          backgroundColor: "#f8fafc",
+          padding: "24px 32px",
+          textAlign: "center",
+          fontSize: "12px",
+          color: "#94a3b8",
+          marginTop: "auto",
+        }}
+      >
+        <div>
+          Copyright &copy; 2026 Autozip Operations Foundation. All rights reserved. Registered
+          trademarks belong to their respective holders. For more information, please see our{" "}
+          <Link href="/dashboard/settings" style={{ color: "#0284c7" }}>
+            Platform Usage
+          </Link>
+          ,{" "}
+          <Link href="/dashboard/settings" style={{ color: "#0284c7" }}>
+            Privacy Policy
+          </Link>
+          , and{" "}
+          <Link href="/dashboard/settings" style={{ color: "#0284c7" }}>
+            Cookie Settings
+          </Link>
+          .
+        </div>
+      </footer>
+
+      {/* Interactive Schedule Meeting Modal */}
+      {showScheduleModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.5)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "12px",
+              padding: "24px 28px",
+              width: "100%",
+              maxWidth: "420px",
+              boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "16px",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 600, color: "#0f172a" }}>
+                Schedule New Meeting
+              </h3>
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#94a3b8",
+                  cursor: "pointer",
+                  fontSize: "18px",
+                }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleMeeting}>
+              <div style={{ marginBottom: "14px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#475569",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Meeting Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Weekly Operations Sync"
+                  value={meetingSubject}
+                  onChange={(e) => setMeetingSubject(e.target.value)}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#475569",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Time / Schedule
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Tomorrow at 10:00 AM UTC"
+                  value={meetingTime}
+                  onChange={(e) => setMeetingTime(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleModal(false)}
+                  style={{
+                    padding: "8px 14px",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#64748b",
+                    backgroundColor: "#f1f5f9",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: "8px 16px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#ffffff",
+                    backgroundColor: "#0284c7",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Save Meeting
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

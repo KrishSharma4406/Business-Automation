@@ -1,213 +1,242 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Icon } from "@/src/components/ui/icon";
 
-const navItems = [
-  { id: "01", label: "Dashboard", href: "/dashboard", desc: "Overview & Telemetry" },
-  { id: "02", label: "Conversations", href: "/dashboard/conversations", desc: "AI Omnichannel Chat" },
-  { id: "03", label: "Customers", href: "/dashboard/customers", desc: "Directory & Profiles" },
-  { id: "04", label: "Leads", href: "/dashboard/leads", desc: "AI Scoring & Ingress" },
-  { id: "05", label: "Automations", href: "/dashboard/automation", desc: "Deterministic Rules" },
-  { id: "06", label: "Settings", href: "/dashboard/settings", desc: "Workspace Node Config" },
-  { id: "07", label: "Integrations", href: "/dashboard/settings/integrations", desc: "API Gateways & Sync" },
+type NavSection = {
+  header: string;
+  items: {
+    label: string;
+    href: string;
+    icon: string;
+    badge?: string;
+  }[];
+};
+
+const navigationSections: NavSection[] = [
+  {
+    header: "ENGAGEMENT",
+    items: [
+      { label: "Meetings", href: "/dashboard", icon: "meetings" },
+      { label: "Conversations", href: "/dashboard/conversations", icon: "chat" },
+      { label: "Leads", href: "/dashboard/leads", icon: "events" },
+      { label: "Customers", href: "/dashboard/customers", icon: "groups" },
+      { label: "Automations", href: "/dashboard/automation", icon: "automation" },
+      { label: "Mailing Lists", href: "/dashboard/leads?tab=mailing", icon: "mailing-lists" },
+      { label: "Newsletters", href: "/dashboard/leads?tab=newsletters", icon: "newsletters" },
+      { label: "Surveys & Votes", href: "/dashboard/settings?tab=surveys", icon: "surveys" },
+    ],
+  },
+  {
+    header: "INFRASTRUCTURE",
+    items: [
+      { label: "Integrations", href: "/dashboard/settings/integrations", icon: "code" },
+      { label: "Workspace Settings", href: "/dashboard/settings", icon: "settings" },
+    ],
+  },
+  {
+    header: "ORGANIZATION",
+    items: [
+      { label: "Initiatives", href: "/dashboard/settings?tab=initiatives", icon: "initiatives" },
+    ],
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { data: session, update: updateSession } = useSession();
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [businessName, setBusinessName] = useState("Autozip Enterprise");
-  const [userRole, setUserRole] = useState("ADMIN");
-  const [userPhone, setUserPhone] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const [activeTab, setActiveTab] = useState<"Home" | "Projects" | "Organization">("Home");
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.settings) {
-          if (data.settings.business?.name) setBusinessName(data.settings.business.name);
-          if (data.settings.user?.role) setUserRole(data.settings.user.role);
-          if (data.settings.user?.phone) setUserPhone(data.settings.user.phone);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const userName = session?.user?.name || "Operator";
-  const userEmail = session?.user?.email || "operator@autozip.dev";
-  const initials = userName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  async function handleSaveName() {
-    if (!newName.trim()) return;
-    setSaving(true);
-    try {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userName: newName.trim() }),
-      });
-      if (res.ok) {
-        if (updateSession) {
-          await updateSession({ name: newName.trim() });
-        }
-        setEditingName(false);
-        setNewName("");
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2500);
-        router.refresh();
-      }
-    } catch (err) {
-      console.error("Failed to update name:", err);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSignOut() {
-    await signOut({ callbackUrl: "/" });
-  }
+  const userName = session?.user?.name || "Krish Kumar";
+  const userInitial = userName.trim().charAt(0).toUpperCase() || "K";
 
   return (
     <aside
       style={{
         width: "250px",
-        minHeight: "100vh",
-        background: "var(--az-surface)",
-        borderRight: "1px solid var(--az-border)",
+        minWidth: "250px",
+        maxWidth: "250px",
+        height: "100vh",
+        position: "sticky",
+        top: 0,
+        backgroundColor: "#081b2d",
+        color: "#d0dbe5",
         display: "flex",
         flexDirection: "column",
-        flexShrink: 0,
+        borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+        userSelect: "none",
         zIndex: 50,
       }}
     >
-      {/* Brand Header */}
+      {/* Top Bar with brand icon, toggle, plus */}
       <div
         style={{
-          padding: "18px 20px",
-          borderBottom: "1px solid var(--az-border)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          padding: "14px 16px 10px",
         }}
       >
         <Link
-          href="/"
-          className="az-brand"
-          style={{ textDecoration: "none" }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span
-              style={{
-                fontFamily: "var(--az-font-mono)",
-                fontSize: "15px",
-                fontWeight: 800,
-                letterSpacing: "0.06em",
-                color: "#ffffff",
-              }}
-            >
-              AUTOLEEP
-            </span>
-            <span className="az-brand-spec" style={{ fontSize: "9px", padding: "1px 5px" }}>
-              SYS.VER 2.4
-            </span>
-          </div>
-        </Link>
-        <span className="az-status-dot" title="Runtime Active" />
-      </div>
-
-      <div
-        style={{
-          padding: "12px 14px",
-          borderBottom: "1px solid var(--az-border-subtle)",
-          position: "relative",
-          background: showProfileMenu ? "rgba(22, 26, 32, 0.85)" : "transparent",
-          transition: "background 0.15s ease",
-        }}
-      >
-        <div
-          onClick={() => setShowProfileMenu(!showProfileMenu)}
+          href="/dashboard"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            cursor: "pointer",
-            padding: "6px 8px",
-            borderRadius: "6px",
-            transition: "all 0.15s ease",
-            background: showProfileMenu ? "var(--az-surface-alt)" : "transparent",
-            border: showProfileMenu ? "1px solid var(--az-border-bright)" : "1px solid transparent",
-          }}
-          onMouseEnter={(e) => {
-            if (!showProfileMenu) e.currentTarget.style.background = "var(--az-surface-alt)";
-          }}
-          onMouseLeave={(e) => {
-            if (!showProfileMenu) e.currentTarget.style.background = "transparent";
+            gap: "8px",
+            textDecoration: "none",
+            color: "#ffffff",
           }}
         >
-          {/* Avatar Initials */}
-          <div style={{ position: "relative" }}>
+          <div
+            style={{
+              width: "28px",
+              height: "28px",
+              borderRadius: "4px",
+              border: "2px solid #38bdf8",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(56, 189, 248, 0.1)",
+            }}
+          >
             <div
               style={{
-                width: "34px",
-                height: "34px",
-                borderRadius: "6px",
-                background: "linear-gradient(135deg, var(--az-emerald), #059669)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: "var(--az-font-mono)",
-                fontSize: "11px",
-                fontWeight: 700,
-                color: "#ffffff",
-                letterSpacing: "0.04em",
-                flexShrink: 0,
-                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.25)",
-              }}
-            >
-              {initials}
-            </div>
-            <span
-              style={{
-                position: "absolute",
-                bottom: "-2px",
-                right: "-2px",
                 width: "8px",
                 height: "8px",
-                borderRadius: "50%",
-                background: "var(--az-emerald)",
-                border: "2px solid var(--az-surface)",
+                backgroundColor: "#38bdf8",
+                borderRadius: "1px",
               }}
             />
           </div>
+          <span style={{ fontWeight: 600, fontSize: "14px", letterSpacing: "0.02em" }}>
+            Autozip
+          </span>
+        </Link>
 
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "4px",
-              }}
-            >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button
+            title="Toggle Sidebar"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#94a3b8",
+              cursor: "pointer",
+              padding: "4px",
+              display: "flex",
+              alignItems: "center",
+              borderRadius: "4px",
+            }}
+          >
+            <Icon name="grid" size={16} />
+          </button>
+          <button
+            title="Create New Action"
+            style={{
+              width: "24px",
+              height: "24px",
+              borderRadius: "50%",
+              backgroundColor: "#0284c7",
+              color: "#ffffff",
+              border: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              transition: "background 0.2s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0369a1")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0284c7")}
+          >
+            <Icon name="plus" size={14} strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
+
+      {/* Pill Switcher (Home / Projects / Organization) */}
+      <div style={{ padding: "4px 14px 12px" }}>
+        <div
+          style={{
+            display: "flex",
+            backgroundColor: "rgba(255, 255, 255, 0.06)",
+            borderRadius: "20px",
+            padding: "2px",
+            gap: "2px",
+          }}
+        >
+          {(["Home", "Projects", "Organization"] as const).map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  fontWeight: isActive ? 600 : 500,
+                  color: isActive ? "#081b2d" : "#94a3b8",
+                  backgroundColor: isActive ? "#ffffff" : "transparent",
+                  border: "none",
+                  borderRadius: "16px",
+                  padding: "5px 6px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                <Icon
+                  name={
+                    tab === "Home" ? "home" : tab === "Projects" ? "folder" : "building"
+                  }
+                  size={12}
+                />
+                <span>{tab}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* User profile card */}
+      <div style={{ padding: "0 14px 12px" }}>
+        <div
+          style={{
+            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "8px",
+            padding: "10px 12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  backgroundColor: "#cbd5e1",
+                  color: "#081b2d",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                }}
+              >
+                {userInitial}
+              </div>
               <span
                 style={{
-                  fontFamily: "var(--az-font-mono)",
-                  fontSize: "12px",
+                  fontSize: "13px",
                   fontWeight: 600,
                   color: "#ffffff",
+                  maxWidth: "130px",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -215,511 +244,296 @@ export default function Sidebar() {
               >
                 {userName}
               </span>
-              <span
-                style={{
-                  fontFamily: "var(--az-font-mono)",
-                  fontSize: "8px",
-                  padding: "1px 4px",
-                  borderRadius: "2px",
-                  background: "rgba(16, 185, 129, 0.15)",
-                  color: "var(--az-emerald)",
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {userRole}
-              </span>
             </div>
-            <div
-              style={{
-                fontFamily: "var(--az-font-mono)",
-                fontSize: "10px",
-                color: "var(--az-text-muted)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                marginTop: "1px",
-              }}
-            >
-              {userEmail}
-            </div>
+            <span style={{ color: "#64748b" }}>
+              <Icon name="code" size={14} />
+            </span>
           </div>
 
-          <span
+          <Link
+            href="/dashboard/settings"
             style={{
-              fontSize: "10px",
-              color: showProfileMenu ? "var(--az-emerald)" : "var(--az-text-muted)",
-              transition: "transform 0.2s ease",
-              transform: showProfileMenu ? "rotate(180deg)" : "rotate(0deg)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: "8px",
+              paddingTop: "8px",
+              borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+              fontSize: "11px",
+              color: "#94a3b8",
+              textDecoration: "none",
             }}
           >
-            ▼
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <Icon name="folder" size={12} />
+              Profile & Account
+            </span>
+            <Icon name="external-link" size={11} />
+          </Link>
+        </div>
+      </div>
+
+      {/* Primary Dashboard pill */}
+      <div style={{ padding: "0 14px 8px" }}>
+        <Link
+          href="/dashboard"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "8px 12px",
+            borderRadius: "6px",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#ffffff",
+            backgroundColor:
+              pathname === "/dashboard"
+                ? "rgba(56, 189, 248, 0.22)"
+                : "rgba(255, 255, 255, 0.04)",
+            border:
+              pathname === "/dashboard"
+                ? "1px solid rgba(56, 189, 248, 0.35)"
+                : "1px solid transparent",
+            textDecoration: "none",
+            transition: "all 0.15s ease",
+          }}
+        >
+          <Icon name="dashboard" size={15} style={{ color: "#38bdf8" }} />
+          <span>Dashboard</span>
+        </Link>
+      </div>
+
+      {/* Nav List grouped by category */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "4px 14px 12px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+        }}
+      >
+        {navigationSections.map((section) => (
+          <div key={section.header}>
+            <div
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                color: "#64748b",
+                marginBottom: "6px",
+                paddingLeft: "8px",
+              }}
+            >
+              {section.header}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+              {section.items.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      color: isActive ? "#ffffff" : "#cbd5e1",
+                      backgroundColor: isActive
+                        ? "rgba(56, 189, 248, 0.15)"
+                        : "transparent",
+                      textDecoration: "none",
+                      transition: "all 0.12s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+                        e.currentTarget.style.color = "#ffffff";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "#cbd5e1";
+                      }
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ color: isActive ? "#38bdf8" : "#94a3b8" }}>
+                        <Icon name={item.icon} size={15} />
+                      </span>
+                      <span>{item.label}</span>
+                    </div>
+
+                    {item.badge && (
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          padding: "1px 6px",
+                          borderRadius: "10px",
+                          backgroundColor: "#0284c7",
+                          color: "#ffffff",
+                        }}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer User & Bottom action */}
+      <div
+        style={{
+          borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+          padding: "10px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: "#071726",
+          position: "relative",
+        }}
+      >
+        <div
+          onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            cursor: "pointer",
+            flex: 1,
+          }}
+        >
+          <div
+            style={{
+              width: "24px",
+              height: "24px",
+              borderRadius: "50%",
+              backgroundColor: "#e2e8f0",
+              color: "#081b2d",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "11px",
+              fontWeight: 700,
+            }}
+          >
+            {userInitial}
+          </div>
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: 500,
+              color: "#e2e8f0",
+              maxWidth: "120px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {userName}
           </span>
+          <Icon name="chevron-down" size={13} style={{ color: "#64748b" }} />
         </div>
 
-        {/* Profile Dropdown / Card */}
-        {showProfileMenu && (
+        {/* User Dropdown */}
+        {userDropdownOpen && (
           <div
             style={{
               position: "absolute",
-              top: "calc(100% + 4px)",
-              left: "8px",
-              right: "8px",
-              background: "var(--az-surface-elevated)",
-              border: "1px solid var(--az-border-bright)",
+              bottom: "48px",
+              left: "14px",
+              width: "200px",
+              backgroundColor: "#0f2338",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
               borderRadius: "8px",
-              padding: "12px",
-              zIndex: 1000,
-              boxShadow: "0 12px 36px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.05)",
+              padding: "6px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+              zIndex: 100,
               display: "flex",
               flexDirection: "column",
-              gap: "10px",
+              gap: "4px",
             }}
           >
-            {/* Header */}
-            <div
+            <Link
+              href="/dashboard/settings"
+              onClick={() => setUserDropdownOpen(false)}
               style={{
+                padding: "8px 10px",
+                fontSize: "12px",
+                color: "#e2e8f0",
+                textDecoration: "none",
+                borderRadius: "4px",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                borderBottom: "1px solid var(--az-border-subtle)",
-                paddingBottom: "8px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--az-emerald)", fontSize: "9px" }}>●</span>
-                <span
-                  style={{
-                    fontFamily: "var(--az-font-mono)",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    color: "var(--az-text-secondary)",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Operator Profile
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowProfileMenu(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--az-text-muted)",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  padding: "2px 4px",
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Change Display Name / Username */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span
-                  style={{
-                    fontFamily: "var(--az-font-mono)",
-                    fontSize: "10px",
-                    color: "var(--az-text-muted)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  Username / Name
-                </span>
-                {!editingName && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingName(true);
-                      setNewName(userName);
-                    }}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "var(--az-emerald)",
-                      fontFamily: "var(--az-font-mono)",
-                      fontSize: "10px",
-                      cursor: "pointer",
-                      padding: 0,
-                      textDecoration: "underline",
-                    }}
-                  >
-                    Change
-                  </button>
-                )}
-              </div>
-
-              {editingName ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <input
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder={userName}
-                    className="az-field-input"
-                    style={{ fontSize: "12px", padding: "6px 8px" }}
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveName();
-                      if (e.key === "Escape") {
-                        setEditingName(false);
-                        setNewName("");
-                      }
-                    }}
-                  />
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button
-                      type="button"
-                      onClick={handleSaveName}
-                      disabled={saving || !newName.trim()}
-                      className="az-btn-primary"
-                      style={{ fontSize: "10px", padding: "4px 10px", flex: 1, justifyContent: "center" }}
-                    >
-                      {saving ? "Saving..." : "Save Name"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingName(false);
-                        setNewName("");
-                      }}
-                      className="az-btn-secondary"
-                      style={{ fontSize: "10px", padding: "4px 8px" }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  style={{
-                    fontFamily: "var(--az-font-mono)",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: "#ffffff",
-                    padding: "4px 0",
-                  }}
-                >
-                  {userName}
-                </div>
-              )}
-
-              {saveSuccess && (
-                <span
-                  style={{
-                    fontFamily: "var(--az-font-mono)",
-                    fontSize: "10px",
-                    color: "var(--az-emerald)",
-                  }}
-                >
-                  ✓ Name updated successfully
-                </span>
-              )}
-            </div>
-
-            {/* Email Address */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              <span
-                style={{
-                  fontFamily: "var(--az-font-mono)",
-                  fontSize: "10px",
-                  color: "var(--az-text-muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                }}
-              >
-                Operator Email
-              </span>
-              <div
-                style={{
-                  fontFamily: "var(--az-font-mono)",
-                  fontSize: "11px",
-                  color: "var(--az-text-secondary)",
-                  wordBreak: "break-all",
-                }}
-              >
-                {userEmail}
-              </div>
-            </div>
-
-            {/* Contact Number */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              <span
-                style={{
-                  fontFamily: "var(--az-font-mono)",
-                  fontSize: "10px",
-                  color: "var(--az-text-muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                }}
-              >
-                Contact No.
-              </span>
-              <div
-                style={{
-                  fontFamily: "var(--az-font-mono)",
-                  fontSize: "11px",
-                  color: userPhone ? "#ffffff" : "var(--az-text-muted)",
-                  fontWeight: userPhone ? 500 : 400,
-                }}
-              >
-                {userPhone || "Not configured"}
-              </div>
-            </div>
-
-            {/* Workspace & Role Info */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
                 gap: "8px",
-                padding: "8px",
-                background: "rgba(0, 0, 0, 0.25)",
-                borderRadius: "4px",
-                border: "1px solid var(--az-border-subtle)",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
-              <div>
-                <div style={{ fontFamily: "var(--az-font-mono)", fontSize: "9px", color: "var(--az-text-muted)", textTransform: "uppercase" }}>
-                  Role
-                </div>
-                <div style={{ fontFamily: "var(--az-font-mono)", fontSize: "11px", color: "var(--az-emerald)", fontWeight: 600 }}>
-                  {userRole}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontFamily: "var(--az-font-mono)", fontSize: "9px", color: "var(--az-text-muted)", textTransform: "uppercase" }}>
-                  Workspace
-                </div>
-                <div
-                  style={{
-                    fontFamily: "var(--az-font-mono)",
-                    fontSize: "11px",
-                    color: "#ffffff",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                  title={businessName}
-                >
-                  {businessName}
-                </div>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div style={{ height: "1px", background: "var(--az-border)", margin: "2px 0" }} />
-
-            {/* Action Links */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-              {/* Account Settings */}
-              <ProfileMenuBtn
-                label="Account Settings"
-                onClick={() => {
-                  setShowProfileMenu(false);
-                  router.push("/dashboard/settings");
-                }}
-              />
-
-              {/* Sign Out */}
-              <ProfileMenuBtn
-                label="Sign Out"
-                danger
-                onClick={handleSignOut}
-              />
-            </div>
+              <Icon name="settings" size={14} />
+              Settings
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              style={{
+                padding: "8px 10px",
+                fontSize: "12px",
+                color: "#f87171",
+                background: "transparent",
+                border: "none",
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            >
+              <Icon name="external-link" size={14} />
+              Sign Out
+            </button>
           </div>
         )}
-      </div>
 
-      {/* Operational Node Status Banner */}
-      <div
-        style={{
-          padding: "10px 16px",
-          background: "rgba(16, 185, 129, 0.05)",
-          borderBottom: "1px solid var(--az-border-subtle)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          fontSize: "10px",
-          fontFamily: "var(--az-font-mono)",
-          color: "var(--az-text-secondary)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ color: "var(--az-emerald)", fontWeight: 700 }}>●</span>
-          <span>SYSTEM ONLINE</span>
-        </div>
-        <span style={{ color: "var(--az-emerald)" }}>READY</span>
-      </div>
-
-      {/* Nav Section Label */}
-      <div
-        style={{
-          padding: "16px 20px 8px",
-          fontFamily: "var(--az-font-mono)",
-          fontSize: "10px",
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          color: "var(--az-text-muted)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <span>MAIN MENU</span>
-        <span style={{ fontSize: "9px", color: "var(--az-emerald)" }}>[7 PAGES]</span>
-      </div>
-
-      {/* Navigation Links */}
-      <nav style={{ flex: 1, padding: "4px 10px", display: "flex", flexDirection: "column", gap: "3px" }}>
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "9px 12px",
-                borderRadius: "4px",
-                fontFamily: "var(--az-font-mono)",
-                fontSize: "12px",
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? "#ffffff" : "var(--az-text-secondary)",
-                background: isActive ? "var(--az-surface-alt)" : "transparent",
-                borderLeft: isActive ? "2px solid var(--az-emerald)" : "2px solid transparent",
-                borderTop: "1px solid",
-                borderRight: "1px solid",
-                borderBottom: "1px solid",
-                borderColor: isActive ? "var(--az-border-bright)" : "transparent",
-                textDecoration: "none",
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
-                  e.currentTarget.style.color = "#ffffff";
-                  e.currentTarget.style.borderColor = "var(--az-border-subtle)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--az-text-secondary)";
-                  e.currentTarget.style.borderColor = "transparent";
-                }
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
-                <span
-                  style={{
-                    fontSize: "10px",
-                    color: isActive ? "var(--az-emerald)" : "var(--az-text-muted)",
-                    fontWeight: 700,
-                  }}
-                >
-                  {item.id}
-                </span>
-                <span>{item.label}</span>
-              </div>
-              {isActive ? (
-                <span
-                  style={{
-                    width: "5px",
-                    height: "5px",
-                    borderRadius: "50%",
-                    backgroundColor: "var(--az-emerald)",
-                    boxShadow: "0 0 8px var(--az-emerald)",
-                  }}
-                />
-              ) : null}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* System Status Module Footer */}
-      <div
-        style={{
-          margin: "12px",
-          padding: "14px",
-          background: "var(--az-surface-alt)",
-          border: "1px solid var(--az-border)",
-          borderRadius: "4px",
-          fontFamily: "var(--az-font-mono)",
-          fontSize: "10px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-          <span style={{ color: "var(--az-text-muted)", textTransform: "uppercase" }}>SYSTEM STATUS</span>
-          <span className="az-tag az-tag-emerald" style={{ padding: "1px 5px", fontSize: "9px" }}>
-            ONLINE
-          </span>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px", color: "var(--az-text-secondary)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>DATABASE</span>
-            <span style={{ color: "var(--az-emerald)" }}>CONNECTED</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>AI ENGINE</span>
-            <span style={{ color: "#ffffff" }}>ACTIVE</span>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#64748b" }}>
+          <button
+            title="System Status"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#64748b",
+              cursor: "pointer",
+              padding: "3px",
+            }}
+          >
+            <Icon name="award" size={14} />
+          </button>
+          <button
+            title="Expand View"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#64748b",
+              cursor: "pointer",
+              padding: "3px",
+            }}
+          >
+            <Icon name="external-link" size={14} />
+          </button>
         </div>
       </div>
     </aside>
-  );
-}
-
-function ProfileMenuBtn({
-  label,
-  onClick,
-  danger,
-}: {
-  label: string;
-  onClick: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        width: "100%",
-        padding: "7px 10px",
-        background: "transparent",
-        border: "none",
-        borderRadius: "4px",
-        fontFamily: "var(--az-font-mono)",
-        fontSize: "11px",
-        color: danger ? "#ef4444" : "var(--az-text-secondary)",
-        cursor: "pointer",
-        textAlign: "left",
-        transition: "all 0.15s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = danger
-          ? "rgba(239, 68, 68, 0.1)"
-          : "rgba(255, 255, 255, 0.04)";
-        e.currentTarget.style.color = danger ? "#f87171" : "#ffffff";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "transparent";
-        e.currentTarget.style.color = danger ? "#ef4444" : "var(--az-text-secondary)";
-      }}
-    >
-      {label}
-    </button>
   );
 }

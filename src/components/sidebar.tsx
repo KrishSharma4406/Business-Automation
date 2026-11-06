@@ -6,44 +6,17 @@ import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { Icon } from "@/src/components/ui/icon";
 
-type NavSection = {
-  header: string;
-  items: {
-    label: string;
-    href: string;
-    icon: string;
-    badge?: string;
-  }[];
+type NavItem = {
+  label: string;
+  href: string;
+  icon: string;
+  badge?: string;
 };
 
-const navigationSections: NavSection[] = [
-  {
-    header: "ENGAGEMENT",
-    items: [
-      { label: "Meetings", href: "/dashboard", icon: "meetings" },
-      { label: "Conversations", href: "/dashboard/conversations", icon: "chat" },
-      { label: "Leads", href: "/dashboard/leads", icon: "events" },
-      { label: "Customers", href: "/dashboard/customers", icon: "groups" },
-      { label: "Automations", href: "/dashboard/automation", icon: "automation" },
-      { label: "Mailing Lists", href: "/dashboard/leads?tab=mailing", icon: "mailing-lists" },
-      { label: "Newsletters", href: "/dashboard/leads?tab=newsletters", icon: "newsletters" },
-      { label: "Surveys & Votes", href: "/dashboard/settings?tab=surveys", icon: "surveys" },
-    ],
-  },
-  {
-    header: "INFRASTRUCTURE",
-    items: [
-      { label: "Integrations", href: "/dashboard/settings/integrations", icon: "code" },
-      { label: "Workspace Settings", href: "/dashboard/settings", icon: "settings" },
-    ],
-  },
-  {
-    header: "ORGANIZATION",
-    items: [
-      { label: "Initiatives", href: "/dashboard/settings?tab=initiatives", icon: "initiatives" },
-    ],
-  },
-];
+type NavGroup = {
+  title: string;
+  items: NavItem[];
+};
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -53,6 +26,71 @@ export default function Sidebar() {
 
   const userName = session?.user?.name || "Krish Kumar";
   const userInitial = userName.trim().charAt(0).toUpperCase() || "K";
+
+  // Context-aware groups depending on activeTab
+  const getNavGroups = (): NavGroup[] => {
+    if (activeTab === "Projects") {
+      return [
+        {
+          title: "PROJECT WORKFLOWS",
+          items: [
+            { label: "Active Automations", href: "/dashboard/automation", icon: "automation" },
+            { label: "Pipeline Telemetry", href: "/dashboard", icon: "bar-chart" },
+            { label: "Inbound Leads", href: "/dashboard/leads", icon: "events" },
+          ],
+        },
+        {
+          title: "CONNECTED STACK",
+          items: [
+            { label: "Integrations & APIs", href: "/dashboard/settings/integrations", icon: "code" },
+            { label: "Repository Sync", href: "/dashboard/settings", icon: "git-commit" },
+          ],
+        },
+      ];
+    }
+
+    if (activeTab === "Organization") {
+      return [
+        {
+          title: "MEMBERS & DIRECTORY",
+          items: [
+            { label: "Customer Accounts", href: "/dashboard/customers", icon: "groups" },
+            { label: "Conversations & Chat", href: "/dashboard/conversations", icon: "chat" },
+          ],
+        },
+        {
+          title: "ADMINISTRATION",
+          items: [
+            { label: "Workspace Settings", href: "/dashboard/settings", icon: "settings" },
+            { label: "API Credentials", href: "/dashboard/settings/integrations", icon: "code" },
+          ],
+        },
+      ];
+    }
+
+    // Default: Home
+    return [
+      {
+        title: "OPERATIONS",
+        items: [
+          { label: "Overview", href: "/dashboard", icon: "dashboard" },
+          { label: "Conversations", href: "/dashboard/conversations", icon: "chat" },
+          { label: "Leads Pipeline", href: "/dashboard/leads", icon: "events" },
+          { label: "Customers", href: "/dashboard/customers", icon: "groups" },
+          { label: "Automations", href: "/dashboard/automation", icon: "automation" },
+        ],
+      },
+      {
+        title: "CONFIGURATION",
+        items: [
+          { label: "Integrations", href: "/dashboard/settings/integrations", icon: "code" },
+          { label: "Settings", href: "/dashboard/settings", icon: "settings" },
+        ],
+      },
+    ];
+  };
+
+  const navGroups = getNavGroups();
 
   return (
     <aside
@@ -72,13 +110,13 @@ export default function Sidebar() {
         zIndex: 50,
       }}
     >
-      {/* Top Bar with brand icon, toggle, plus */}
+      {/* Brand & Actions Header */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "14px 16px 10px",
+          padding: "16px 16px 12px",
         }}
       >
         <Link
@@ -86,7 +124,7 @@ export default function Sidebar() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "8px",
+            gap: "10px",
             textDecoration: "none",
             color: "#ffffff",
           }}
@@ -95,12 +133,12 @@ export default function Sidebar() {
             style={{
               width: "28px",
               height: "28px",
-              borderRadius: "4px",
-              border: "2px solid #38bdf8",
+              borderRadius: "6px",
+              border: "1.5px solid #38bdf8",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: "rgba(56, 189, 248, 0.1)",
+              backgroundColor: "rgba(56, 189, 248, 0.12)",
             }}
           >
             <div
@@ -108,56 +146,57 @@ export default function Sidebar() {
                 width: "8px",
                 height: "8px",
                 backgroundColor: "#38bdf8",
-                borderRadius: "1px",
+                borderRadius: "2px",
               }}
             />
           </div>
-          <span style={{ fontWeight: 600, fontSize: "14px", letterSpacing: "0.02em" }}>
-            Autozip
+          <span style={{ fontWeight: 700, fontSize: "14px", letterSpacing: "-0.01em" }}>
+            Autozip OS
           </span>
         </Link>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <button
-            title="Toggle Sidebar"
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <Link
+            href="/dashboard/conversations"
+            title="Open AI Chat"
             style={{
               background: "transparent",
               border: "none",
               color: "#94a3b8",
-              cursor: "pointer",
-              padding: "4px",
+              padding: "5px",
               display: "flex",
               alignItems: "center",
               borderRadius: "4px",
+              textDecoration: "none",
             }}
           >
-            <Icon name="grid" size={16} />
-          </button>
-          <button
-            title="Create New Action"
+            <Icon name="chat" size={15} />
+          </Link>
+          <Link
+            href="/dashboard/leads"
+            title="Ingest Lead / New Action"
             style={{
               width: "24px",
               height: "24px",
               borderRadius: "50%",
               backgroundColor: "#0284c7",
               color: "#ffffff",
-              border: "none",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              cursor: "pointer",
-              transition: "background 0.2s ease",
+              textDecoration: "none",
+              transition: "background 0.15s ease",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0369a1")}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0284c7")}
           >
-            <Icon name="plus" size={14} strokeWidth={2.5} />
-          </button>
+            <Icon name="plus" size={13} strokeWidth={2.5} />
+          </Link>
         </div>
       </div>
 
-      {/* Pill Switcher (Home / Projects / Organization) */}
-      <div style={{ padding: "4px 14px 12px" }}>
+      {/* Pill Mode Switcher (Home / Projects / Organization) */}
+      <div style={{ padding: "0 14px 12px" }}>
         <div
           style={{
             display: "flex",
@@ -185,7 +224,7 @@ export default function Sidebar() {
                   backgroundColor: isActive ? "#ffffff" : "transparent",
                   border: "none",
                   borderRadius: "16px",
-                  padding: "5px 6px",
+                  padding: "5px 4px",
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
@@ -203,24 +242,24 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* User profile card */}
-      <div style={{ padding: "0 14px 12px" }}>
+      {/* User Profile Card */}
+      <div style={{ padding: "0 14px 10px" }}>
         <div
           style={{
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            backgroundColor: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
             borderRadius: "8px",
             padding: "10px 12px",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
               <div
                 style={{
-                  width: "28px",
-                  height: "28px",
+                  width: "26px",
+                  height: "26px",
                   borderRadius: "50%",
-                  backgroundColor: "#cbd5e1",
+                  backgroundColor: "#38bdf8",
                   color: "#081b2d",
                   display: "flex",
                   alignItems: "center",
@@ -233,10 +272,10 @@ export default function Sidebar() {
               </div>
               <span
                 style={{
-                  fontSize: "13px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   color: "#ffffff",
-                  maxWidth: "130px",
+                  maxWidth: "135px",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -246,7 +285,7 @@ export default function Sidebar() {
               </span>
             </div>
             <span style={{ color: "#64748b" }}>
-              <Icon name="code" size={14} />
+              <Icon name="code" size={13} />
             </span>
           </div>
 
@@ -257,24 +296,24 @@ export default function Sidebar() {
               alignItems: "center",
               justifyContent: "space-between",
               marginTop: "8px",
-              paddingTop: "8px",
+              paddingTop: "7px",
               borderTop: "1px solid rgba(255, 255, 255, 0.06)",
               fontSize: "11px",
               color: "#94a3b8",
               textDecoration: "none",
             }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Icon name="folder" size={12} />
+            <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <Icon name="folder" size={11} />
               Profile & Account
             </span>
-            <Icon name="external-link" size={11} />
+            <Icon name="external-link" size={10} />
           </Link>
         </div>
       </div>
 
-      {/* Primary Dashboard pill */}
-      <div style={{ padding: "0 14px 8px" }}>
+      {/* Primary Dashboard Link */}
+      <div style={{ padding: "0 14px 6px" }}>
         <Link
           href="/dashboard"
           style={{
@@ -303,7 +342,7 @@ export default function Sidebar() {
         </Link>
       </div>
 
-      {/* Nav List grouped by category */}
+      {/* Nav List */}
       <div
         style={{
           flex: 1,
@@ -311,26 +350,26 @@ export default function Sidebar() {
           padding: "4px 14px 12px",
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          gap: "14px",
         }}
       >
-        {navigationSections.map((section) => (
-          <div key={section.header}>
+        {navGroups.map((group) => (
+          <div key={group.title}>
             <div
               style={{
                 fontSize: "10px",
                 fontWeight: 700,
                 letterSpacing: "0.08em",
                 color: "#64748b",
-                marginBottom: "6px",
-                paddingLeft: "8px",
+                marginBottom: "5px",
+                paddingLeft: "6px",
               }}
             >
-              {section.header}
+              {group.title}
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              {section.items.map((item) => {
+              {group.items.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <Link
@@ -391,7 +430,7 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Footer User & Bottom action */}
+      {/* Footer Profile Controls */}
       <div
         style={{
           borderTop: "1px solid rgba(255, 255, 255, 0.08)",
@@ -445,7 +484,6 @@ export default function Sidebar() {
           <Icon name="chevron-down" size={13} style={{ color: "#64748b" }} />
         </div>
 
-        {/* User Dropdown */}
         {userDropdownOpen && (
           <div
             style={{
@@ -481,7 +519,26 @@ export default function Sidebar() {
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
             >
               <Icon name="settings" size={14} />
-              Settings
+              Workspace Settings
+            </Link>
+            <Link
+              href="/"
+              onClick={() => setUserDropdownOpen(false)}
+              style={{
+                padding: "8px 10px",
+                fontSize: "12px",
+                color: "#e2e8f0",
+                textDecoration: "none",
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.08)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            >
+              <Icon name="home" size={14} />
+              Landing Page
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
@@ -508,30 +565,13 @@ export default function Sidebar() {
         )}
 
         <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#64748b" }}>
-          <button
-            title="System Status"
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "#64748b",
-              cursor: "pointer",
-              padding: "3px",
-            }}
-          >
-            <Icon name="award" size={14} />
-          </button>
-          <button
-            title="Expand View"
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "#64748b",
-              cursor: "pointer",
-              padding: "3px",
-            }}
+          <Link
+            href="/"
+            title="Visit Public Site"
+            style={{ color: "#64748b", textDecoration: "none", display: "flex" }}
           >
             <Icon name="external-link" size={14} />
-          </button>
+          </Link>
         </div>
       </div>
     </aside>

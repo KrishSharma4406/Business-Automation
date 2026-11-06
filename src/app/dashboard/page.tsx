@@ -4,48 +4,72 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/src/components/ui/icon";
 
-interface MeetingItem {
+interface EventLog {
   id: string;
-  title: string;
+  source: string;
   time: string;
-  status: "scheduled" | "past";
-  attendees: string;
+  body: string;
+  badge: string;
 }
+
+const INITIAL_EVENTS: EventLog[] = [
+  {
+    id: "e-1",
+    source: "WhatsApp Cloud API",
+    time: "Just now",
+    body: "Lead qualified with high intent (Score: 94/100). Auto-dispatched consultation scheduler.",
+    badge: "Auto-Qualified",
+  },
+  {
+    id: "e-2",
+    source: "Inbound REST Webhook",
+    time: "4 mins ago",
+    body: "Commercial inquiry received from enterprise prospect. Emitted to pipeline & database.",
+    badge: "Sync Complete",
+  },
+  {
+    id: "e-3",
+    source: "Automation Engine",
+    time: "18 mins ago",
+    body: "Follow-up workflow triggered for stalled lead after 48h idle period.",
+    badge: "Dispatched",
+  },
+];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
-    activeWeeksStreak: 4,
-    pullRequestsMerged: 18,
-    codeCommits: 142,
     leadsCount: 0,
     customersCount: 0,
     automationsCount: 0,
+    conversationsCount: 0,
   });
 
   const [loading, setLoading] = useState(true);
-  const [streakPeriod, setStreakPeriod] = useState<"current" | "longest">("current");
-  const [prPage, setPrPage] = useState(0);
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "automated">("all");
+  const [eventsList, setEventsList] = useState<EventLog[]>(INITIAL_EVENTS);
 
-  // Quick action state
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [meetingSubject, setMeetingSubject] = useState("");
-  const [meetingTime, setMeetingTime] = useState("");
-  const [meetingsList, setMeetingsList] = useState<MeetingItem[]>([]);
+  // Interactive Quick Lead Dispatch
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [leadName, setLeadName] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadCompany, setLeadCompany] = useState("");
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadMetrics() {
       try {
         setLoading(true);
-        const [leadsRes, automationsRes, customersRes] = await Promise.allSettled([
+        const [leadsRes, automationsRes, customersRes, convRes] = await Promise.allSettled([
           fetch("/api/leads"),
           fetch("/api/automations"),
           fetch("/api/customers"),
+          fetch("/api/ai/conversations"),
         ]);
 
         let leads = 0;
         let automations = 0;
         let customers = 0;
+        let convs = 0;
 
         if (leadsRes.status === "fulfilled" && leadsRes.value.ok) {
           const data = await leadsRes.value.json();
@@ -62,13 +86,16 @@ export default function DashboardPage() {
           customers = data.customers?.length || 0;
         }
 
+        if (convRes.status === "fulfilled" && convRes.value.ok) {
+          const data = await convRes.value.json();
+          convs = data.conversations?.length || 0;
+        }
+
         setStats({
-          activeWeeksStreak: 4,
-          pullRequestsMerged: Math.max(12, automations * 3),
-          codeCommits: Math.max(48, leads * 8 + automations * 14),
           leadsCount: leads,
           customersCount: customers,
           automationsCount: automations,
+          conversationsCount: convs,
         });
       } catch (err) {
         console.error("Failed to load metrics", err);
@@ -80,25 +107,44 @@ export default function DashboardPage() {
     loadMetrics();
   }, []);
 
-  const handleScheduleMeeting = (e: React.FormEvent) => {
+  const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!meetingSubject.trim()) return;
+    if (!leadName.trim() || !leadEmail.trim()) return;
 
-    const newMeeting: MeetingItem = {
-      id: "m-" + Date.now(),
-      title: meetingSubject.trim(),
-      time: meetingTime || "Today at 3:00 PM UTC",
-      status: "scheduled",
-      attendees: "2 attendees",
-    };
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: leadName.trim(),
+          email: leadEmail.trim(),
+          company: leadCompany.trim() || "Enterprise Node",
+          source: "Dashboard Manual",
+        }),
+      });
 
-    setMeetingsList([newMeeting, ...meetingsList]);
-    setMeetingSubject("");
-    setMeetingTime("");
-    setShowScheduleModal(false);
-
-    setNotificationMsg("Meeting scheduled successfully");
-    setTimeout(() => setNotificationMsg(null), 3000);
+      if (res.ok) {
+        setStats((prev) => ({ ...prev, leadsCount: prev.leadsCount + 1 }));
+        setEventsList([
+          {
+            id: "e-" + Date.now(),
+            source: "Manual Intake",
+            time: "Just now",
+            body: `New lead added: ${leadName.trim()} (${leadCompany.trim() || "Direct Ingress"})`,
+            badge: "Ingested",
+          },
+          ...eventsList,
+        ]);
+        setLeadName("");
+        setLeadEmail("");
+        setLeadCompany("");
+        setShowLeadModal(false);
+        setNotificationMsg("Lead ingested successfully into autonomous pipeline");
+        setTimeout(() => setNotificationMsg(null), 3500);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -122,7 +168,7 @@ export default function DashboardPage() {
             right: "24px",
             backgroundColor: "#0284c7",
             color: "#ffffff",
-            padding: "10px 16px",
+            padding: "10px 18px",
             borderRadius: "6px",
             fontSize: "13px",
             fontWeight: 500,
@@ -148,593 +194,537 @@ export default function DashboardPage() {
           padding: "36px 40px 60px",
         }}
       >
-        {/* Page Title & Subtitle */}
-        <div style={{ marginBottom: "32px" }}>
-          <h1
-            style={{
-              fontSize: "26px",
-              fontWeight: 600,
-              color: "#0f172a",
-              letterSpacing: "-0.01em",
-              margin: 0,
-            }}
-          >
-            Dashboard
-          </h1>
-          <p
-            style={{
-              fontSize: "14px",
-              color: "#64748b",
-              marginTop: "4px",
-              marginBottom: 0,
-            }}
-          >
-            Your activity, meetings, and actions across all projects.
-          </p>
-        </div>
-
-        {/* Section: Meetings */}
-        <section style={{ marginBottom: "36px" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "16px",
-            }}
-          >
-            <div
+        {/* Top Header bar */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "16px",
+            marginBottom: "32px",
+          }}
+        >
+          <div>
+            <h1
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "15px",
-                fontWeight: 600,
-                color: "#1e293b",
+                fontSize: "26px",
+                fontWeight: 700,
+                color: "#0f172a",
+                letterSpacing: "-0.02em",
+                margin: 0,
               }}
             >
-              <Icon name="calendar" size={18} style={{ color: "#475569" }} />
-              <span>Meetings</span>
-            </div>
+              Business Operations
+            </h1>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#64748b",
+                marginTop: "4px",
+                marginBottom: 0,
+              }}
+            >
+              Unified telemetry across automated pipelines, customers, and active conversations.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <Link
+              href="/dashboard/conversations"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                backgroundColor: "#ffffff",
+                border: "1px solid #cbd5e1",
+                color: "#334155",
+                borderRadius: "6px",
+                padding: "8px 14px",
+                fontSize: "13px",
+                fontWeight: 500,
+                textDecoration: "none",
+                transition: "border-color 0.15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#94a3b8")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+            >
+              <Icon name="chat" size={14} style={{ color: "#0284c7" }} />
+              Open AI Co-Pilot
+            </Link>
 
             <button
-              onClick={() => setShowScheduleModal(true)}
+              onClick={() => setShowLeadModal(true)}
               style={{
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
                 backgroundColor: "#0284c7",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: "6px",
-                padding: "6px 12px",
-                fontSize: "12px",
-                fontWeight: 500,
+                padding: "8px 16px",
+                fontSize: "13px",
+                fontWeight: 600,
                 cursor: "pointer",
                 transition: "background 0.15s ease",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0369a1")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0284c7")}
             >
-              <Icon name="plus" size={14} />
-              Schedule Meeting
+              <Icon name="plus" size={14} strokeWidth={2.5} />
+              Ingest Lead
             </button>
           </div>
+        </div>
 
-          <div
+        {/* 4 Primary Operational Metric Cards */}
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: "20px",
+            marginBottom: "36px",
+          }}
+        >
+          {/* Card 1: Leads */}
+          <Link
+            href="/dashboard/leads"
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-              gap: "20px",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              padding: "24px",
+              textDecoration: "none",
+              color: "inherit",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.06)";
+              e.currentTarget.style.borderColor = "#38bdf8";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.02)";
+              e.currentTarget.style.borderColor = "#e2e8f0";
             }}
           >
-            {/* Left Card: Past Meetings */}
-            <div
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "12px",
-                padding: "48px 32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "20px",
-                minHeight: "140px",
-                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748b" }}>
+                Total Leads Ingested
+              </span>
               <div
                 style={{
-                  width: "52px",
-                  height: "52px",
-                  borderRadius: "50%",
-                  border: "2px solid #cbd5e1",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "6px",
+                  backgroundColor: "rgba(56, 189, 248, 0.12)",
+                  color: "#0284c7",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#94a3b8",
-                  flexShrink: 0,
                 }}
               >
-                <Icon name="history" size={26} strokeWidth={1.8} />
+                <Icon name="events" size={16} />
               </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: "15px",
-                    fontWeight: 600,
-                    color: "#334155",
-                    marginBottom: "3px",
-                  }}
-                >
-                  You haven&apos;t joined a meeting yet
-                </div>
-                <div style={{ fontSize: "13px", color: "#94a3b8" }}>
-                  Your past meetings will appear here.
-                </div>
+            </div>
+            <div style={{ marginTop: "24px" }}>
+              <div style={{ fontSize: "32px", fontWeight: 700, color: "#0f172a", lineHeight: 1 }}>
+                {stats.leadsCount}
+              </div>
+              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "8px" }}>
+                Automated scoring & prioritization
+              </div>
+            </div>
+          </Link>
+
+          {/* Card 2: Customers */}
+          <Link
+            href="/dashboard/customers"
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              padding: "24px",
+              textDecoration: "none",
+              color: "inherit",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.06)";
+              e.currentTarget.style.borderColor = "#10b981";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.02)";
+              e.currentTarget.style.borderColor = "#e2e8f0";
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748b" }}>
+                Active Customers
+              </span>
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "6px",
+                  backgroundColor: "rgba(16, 185, 129, 0.12)",
+                  color: "#059669",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="groups" size={16} />
+              </div>
+            </div>
+            <div style={{ marginTop: "24px" }}>
+              <div style={{ fontSize: "32px", fontWeight: 700, color: "#0f172a", lineHeight: 1 }}>
+                {stats.customersCount}
+              </div>
+              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "8px" }}>
+                Directory & account profiles
+              </div>
+            </div>
+          </Link>
+
+          {/* Card 3: Automations */}
+          <Link
+            href="/dashboard/automation"
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              padding: "24px",
+              textDecoration: "none",
+              color: "inherit",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.06)";
+              e.currentTarget.style.borderColor = "#8b5cf6";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.02)";
+              e.currentTarget.style.borderColor = "#e2e8f0";
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748b" }}>
+                Active Automations
+              </span>
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "6px",
+                  backgroundColor: "rgba(139, 92, 246, 0.12)",
+                  color: "#7c3aed",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="automation" size={16} />
+              </div>
+            </div>
+            <div style={{ marginTop: "24px" }}>
+              <div style={{ fontSize: "32px", fontWeight: 700, color: "#0f172a", lineHeight: 1 }}>
+                {stats.automationsCount}
+              </div>
+              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "8px" }}>
+                Deterministic workflow triggers
+              </div>
+            </div>
+          </Link>
+
+          {/* Card 4: Conversations */}
+          <Link
+            href="/dashboard/conversations"
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              padding: "24px",
+              textDecoration: "none",
+              color: "inherit",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+              transition: "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.06)";
+              e.currentTarget.style.borderColor = "#f59e0b";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.02)";
+              e.currentTarget.style.borderColor = "#e2e8f0";
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#64748b" }}>
+                AI Conversations
+              </span>
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "6px",
+                  backgroundColor: "rgba(245, 158, 11, 0.12)",
+                  color: "#d97706",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="chat" size={16} />
+              </div>
+            </div>
+            <div style={{ marginTop: "24px" }}>
+              <div style={{ fontSize: "32px", fontWeight: 700, color: "#0f172a", lineHeight: 1 }}>
+                {stats.conversationsCount}
+              </div>
+              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "8px" }}>
+                Context-aware business assistance
+              </div>
+            </div>
+          </Link>
+        </section>
+
+        {/* Live Operational Events & Ingress Feed */}
+        <section style={{ marginBottom: "36px" }}>
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "12px",
+              padding: "24px 28px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "20px",
+                flexWrap: "wrap",
+                gap: "12px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <Icon name="activity" size={18} style={{ color: "#0284c7" }} />
+                <h2 style={{ fontSize: "16px", fontWeight: 600, color: "#0f172a", margin: 0 }}>
+                  Real-time Operational Feed
+                </h2>
+              </div>
+
+              {/* Filter Tabs */}
+              <div
+                style={{
+                  display: "flex",
+                  backgroundColor: "#f1f5f9",
+                  borderRadius: "6px",
+                  padding: "3px",
+                  gap: "2px",
+                }}
+              >
+                {(["all", "active", "automated"] as const).map((filter) => {
+                  const isSel = activeFilter === filter;
+                  return (
+                    <button
+                      key={filter}
+                      onClick={() => setActiveFilter(filter)}
+                      style={{
+                        border: "none",
+                        backgroundColor: isSel ? "#ffffff" : "transparent",
+                        color: isSel ? "#0f172a" : "#64748b",
+                        fontSize: "12px",
+                        fontWeight: isSel ? 600 : 500,
+                        padding: "4px 10px",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        textTransform: "capitalize",
+                        boxShadow: isSel ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                      }}
+                    >
+                      {filter}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Right Card: Scheduled Meetings */}
-            <div
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "12px",
-                padding: "48px 32px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "20px",
-                minHeight: "140px",
-                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
-              }}
-            >
-              <div
-                style={{
-                  width: "52px",
-                  height: "52px",
-                  borderRadius: "50%",
-                  border: "2px solid #cbd5e1",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#94a3b8",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon name="check-circle" size={26} strokeWidth={1.8} />
-              </div>
-              <div>
+            {/* Event rows */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {eventsList.map((ev) => (
                 <div
+                  key={ev.id}
                   style={{
-                    fontSize: "15px",
-                    fontWeight: 600,
-                    color: "#334155",
-                    marginBottom: "3px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "14px 16px",
+                    backgroundColor: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                    gap: "16px",
+                    flexWrap: "wrap",
                   }}
                 >
-                  {meetingsList.length > 0
-                    ? `${meetingsList.length} Upcoming Meeting${meetingsList.length > 1 ? "s" : ""}`
-                    : "Your calendar is clear"}
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                    <div
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        backgroundColor: "#0284c7",
+                        marginTop: "6px",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#1e293b" }}>
+                          {ev.source}
+                        </span>
+                        <span style={{ fontSize: "11px", color: "#94a3b8" }}>{ev.time}</span>
+                      </div>
+                      <p style={{ fontSize: "13px", color: "#475569", margin: "4px 0 0" }}>
+                        {ev.body}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "#0369a1",
+                      backgroundColor: "rgba(56, 189, 248, 0.15)",
+                      padding: "4px 10px",
+                      borderRadius: "12px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {ev.badge}
+                  </span>
                 </div>
-                <div style={{ fontSize: "13px", color: "#94a3b8" }}>
-                  {meetingsList.length > 0
-                    ? meetingsList[0].title + " - " + meetingsList[0].time
-                    : "Your scheduled meetings will appear here."}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Section: Recent Progress */}
-        <section style={{ marginBottom: "40px" }}>
-          <div
+        {/* Quick Nav Shortcut Bar */}
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "16px",
+          }}
+        >
+          <Link
+            href="/dashboard/settings/integrations"
             style={{
+              padding: "16px 20px",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: "16px",
+              textDecoration: "none",
+              color: "#334155",
+              fontSize: "13px",
+              fontWeight: 500,
+              transition: "border-color 0.15s ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: "15px",
-                fontWeight: 600,
-                color: "#1e293b",
-              }}
-            >
-              <Icon name="bar-chart" size={18} style={{ color: "#475569" }} />
-              <span>Recent Progress</span>
-            </div>
+            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Icon name="code" size={16} style={{ color: "#0284c7" }} />
+              Connected Gateways
+            </span>
+            <Icon name="external-link" size={12} style={{ color: "#94a3b8" }} />
+          </Link>
 
-            {/* Slider arrows */}
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <button
-                onClick={() => setPrPage(Math.max(0, prPage - 1))}
-                disabled={prPage === 0}
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "4px",
-                  border: "1px solid #cbd5e1",
-                  backgroundColor: "#ffffff",
-                  color: prPage === 0 ? "#cbd5e1" : "#475569",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: prPage === 0 ? "default" : "pointer",
-                }}
-              >
-                <Icon name="chevron-left" size={14} />
-              </button>
-              <button
-                onClick={() => setPrPage(prPage + 1)}
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "4px",
-                  border: "1px solid #cbd5e1",
-                  backgroundColor: "#ffffff",
-                  color: "#475569",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                }}
-              >
-                <Icon name="chevron-right" size={14} />
-              </button>
-            </div>
-          </div>
-
-          <div
+          <Link
+            href="/dashboard/settings"
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: "20px",
-            }}
-          >
-            {/* Card 1: Active Weeks Streak */}
-            <div
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "10px",
-                padding: "24px",
-                minHeight: "180px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.06)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.02)";
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#334155",
-                }}
-              >
-                Active Weeks Streak
-              </div>
-              <div style={{ marginTop: "32px" }}>
-                <div
-                  style={{
-                    fontSize: "36px",
-                    fontWeight: 500,
-                    color: "#0f172a",
-                    lineHeight: 1,
-                  }}
-                >
-                  {stats.activeWeeksStreak}
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#94a3b8",
-                    marginTop: "8px",
-                  }}
-                >
-                  Current streak
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Pull Requests Merged */}
-            <div
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "10px",
-                padding: "24px",
-                minHeight: "180px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.06)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.02)";
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#334155",
-                }}
-              >
-                Pull Requests Merged
-              </div>
-              <div style={{ marginTop: "32px" }}>
-                <div
-                  style={{
-                    fontSize: "36px",
-                    fontWeight: 500,
-                    color: "#0f172a",
-                    lineHeight: 1,
-                  }}
-                >
-                  {stats.pullRequestsMerged}
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#94a3b8",
-                    marginTop: "8px",
-                  }}
-                >
-                  Last 30 days
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Code Commits */}
-            <div
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "10px",
-                padding: "24px",
-                minHeight: "180px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.06)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.02)";
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#334155",
-                }}
-              >
-                Code Commits
-              </div>
-              <div style={{ marginTop: "32px" }}>
-                <div
-                  style={{
-                    fontSize: "36px",
-                    fontWeight: 500,
-                    color: "#0f172a",
-                    lineHeight: 1,
-                  }}
-                >
-                  {stats.codeCommits}
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#94a3b8",
-                    marginTop: "8px",
-                  }}
-                >
-                  Last 30 days
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section: Live Pipeline & Connected Operations */}
-        <section style={{ marginBottom: "40px" }}>
-          <div
-            style={{
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "#1e293b",
-              marginBottom: "16px",
+              padding: "16px 20px",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
               display: "flex",
               alignItems: "center",
-              gap: "8px",
+              justifyContent: "space-between",
+              textDecoration: "none",
+              color: "#334155",
+              fontSize: "13px",
+              fontWeight: 500,
+              transition: "border-color 0.15s ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
           >
-            <Icon name="zap" size={18} style={{ color: "#0284c7" }} />
-            <span>Operational Pipeline Telemetry</span>
-          </div>
+            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Icon name="settings" size={16} style={{ color: "#0284c7" }} />
+              Workspace Configuration
+            </span>
+            <Icon name="external-link" size={12} style={{ color: "#94a3b8" }} />
+          </Link>
 
-          <div
+          <Link
+            href="/"
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: "16px",
+              padding: "16px 20px",
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              textDecoration: "none",
+              color: "#334155",
+              fontSize: "13px",
+              fontWeight: 500,
+              transition: "border-color 0.15s ease",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
           >
-            <Link
-              href="/dashboard/leads"
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "10px",
-                padding: "20px",
-                textDecoration: "none",
-                color: "inherit",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                transition: "border-color 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
-            >
-              <div>
-                <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
-                  Active Leads Ingested
-                </div>
-                <div
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: 600,
-                    color: "#0f172a",
-                    marginTop: "4px",
-                  }}
-                >
-                  {stats.leadsCount}
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: "11px",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  backgroundColor: "#eff6ff",
-                  color: "#0284c7",
-                  fontWeight: 600,
-                }}
-              >
-                View Leads
-              </span>
-            </Link>
-
-            <Link
-              href="/dashboard/customers"
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "10px",
-                padding: "20px",
-                textDecoration: "none",
-                color: "inherit",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                transition: "border-color 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
-            >
-              <div>
-                <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
-                  Active Customer Accounts
-                </div>
-                <div
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: 600,
-                    color: "#0f172a",
-                    marginTop: "4px",
-                  }}
-                >
-                  {stats.customersCount}
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: "11px",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  backgroundColor: "#f0fdf4",
-                  color: "#16a34a",
-                  fontWeight: 600,
-                }}
-              >
-                Directory
-              </span>
-            </Link>
-
-            <Link
-              href="/dashboard/automation"
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "10px",
-                padding: "20px",
-                textDecoration: "none",
-                color: "inherit",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                transition: "border-color 0.15s ease",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#0284c7")}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
-            >
-              <div>
-                <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
-                  Automations Configured
-                </div>
-                <div
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: 600,
-                    color: "#0f172a",
-                    marginTop: "4px",
-                  }}
-                >
-                  {stats.automationsCount}
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: "11px",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  backgroundColor: "#faf5ff",
-                  color: "#9333ea",
-                  fontWeight: 600,
-                }}
-              >
-                Workflow Engine
-              </span>
-            </Link>
-          </div>
+            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Icon name="home" size={16} style={{ color: "#0284c7" }} />
+              Main Landing Page
+            </span>
+            <Icon name="external-link" size={12} style={{ color: "#94a3b8" }} />
+          </Link>
         </section>
       </main>
 
-      {/* Floating Chat / AI Co-pilot trigger (Bottom right blue circle) */}
+      {/* Floating Chat Trigger */}
       <Link
         href="/dashboard/conversations"
         title="Open AI Omnichannel Assistant"
@@ -745,34 +735,34 @@ export default function DashboardPage() {
           width: "48px",
           height: "48px",
           borderRadius: "50%",
-          backgroundColor: "#3b82f6",
+          backgroundColor: "#0284c7",
           color: "#ffffff",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+          boxShadow: "0 8px 24px rgba(2, 132, 199, 0.4)",
           textDecoration: "none",
           zIndex: 100,
           transition: "transform 0.15s ease, background 0.15s ease",
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = "scale(1.08)";
-          e.currentTarget.style.backgroundColor = "#2563eb";
+          e.currentTarget.style.backgroundColor = "#0369a1";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = "scale(1)";
-          e.currentTarget.style.backgroundColor = "#3b82f6";
+          e.currentTarget.style.backgroundColor = "#0284c7";
         }}
       >
-        <Icon name="chat" size={22} />
+        <Icon name="chat" size={20} />
       </Link>
 
-      {/* Footer matching reference screenshot copyright text */}
+      {/* Footer */}
       <footer
         style={{
           borderTop: "1px solid #e2e8f0",
-          backgroundColor: "#f8fafc",
-          padding: "24px 32px",
+          backgroundColor: "#ffffff",
+          padding: "20px 32px",
           textAlign: "center",
           fontSize: "12px",
           color: "#94a3b8",
@@ -780,25 +770,13 @@ export default function DashboardPage() {
         }}
       >
         <div>
-          Copyright &copy; 2026 Autozip Operations Foundation. All rights reserved. Registered
-          trademarks belong to their respective holders. For more information, please see our{" "}
-          <Link href="/dashboard/settings" style={{ color: "#0284c7" }}>
-            Platform Usage
-          </Link>
-          ,{" "}
-          <Link href="/dashboard/settings" style={{ color: "#0284c7" }}>
-            Privacy Policy
-          </Link>
-          , and{" "}
-          <Link href="/dashboard/settings" style={{ color: "#0284c7" }}>
-            Cookie Settings
-          </Link>
-          .
+          Copyright &copy; 2026 Autozip Operations Platform. All rights reserved. Registered
+          trademarks belong to their respective holders.
         </div>
       </footer>
 
-      {/* Interactive Schedule Meeting Modal */}
-      {showScheduleModal && (
+      {/* Modal: Ingest Lead */}
+      {showLeadModal && (
         <div
           style={{
             position: "fixed",
@@ -830,10 +808,10 @@ export default function DashboardPage() {
               }}
             >
               <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 600, color: "#0f172a" }}>
-                Schedule New Meeting
+                Ingest New Lead
               </h3>
               <button
-                onClick={() => setShowScheduleModal(false)}
+                onClick={() => setShowLeadModal(false)}
                 style={{
                   background: "transparent",
                   border: "none",
@@ -846,7 +824,7 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <form onSubmit={handleScheduleMeeting}>
+            <form onSubmit={handleCreateLead}>
               <div style={{ marginBottom: "14px" }}>
                 <label
                   style={{
@@ -857,13 +835,43 @@ export default function DashboardPage() {
                     marginBottom: "6px",
                   }}
                 >
-                  Meeting Title
+                  Contact Name
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Weekly Operations Sync"
-                  value={meetingSubject}
-                  onChange={(e) => setMeetingSubject(e.target.value)}
+                  placeholder="e.g. John Doe"
+                  value={leadName}
+                  onChange={(e) => setLeadName(e.target.value)}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "14px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "#475569",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  placeholder="e.g. john@enterprise.io"
+                  value={leadEmail}
+                  onChange={(e) => setLeadEmail(e.target.value)}
                   required
                   style={{
                     width: "100%",
@@ -887,13 +895,13 @@ export default function DashboardPage() {
                     marginBottom: "6px",
                   }}
                 >
-                  Time / Schedule
+                  Company / Organization
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Tomorrow at 10:00 AM UTC"
-                  value={meetingTime}
-                  onChange={(e) => setMeetingTime(e.target.value)}
+                  placeholder="e.g. Acme Corp"
+                  value={leadCompany}
+                  onChange={(e) => setLeadCompany(e.target.value)}
                   style={{
                     width: "100%",
                     padding: "8px 12px",
@@ -909,7 +917,7 @@ export default function DashboardPage() {
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                 <button
                   type="button"
-                  onClick={() => setShowScheduleModal(false)}
+                  onClick={() => setShowLeadModal(false)}
                   style={{
                     padding: "8px 14px",
                     fontSize: "13px",
@@ -936,7 +944,7 @@ export default function DashboardPage() {
                     cursor: "pointer",
                   }}
                 >
-                  Save Meeting
+                  Ingest & Qualify
                 </button>
               </div>
             </form>

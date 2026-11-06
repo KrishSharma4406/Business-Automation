@@ -10,7 +10,8 @@ export default function DashboardLayout({
       style={{
         display: "flex",
         minHeight: "100vh",
-        background: "var(--bg-app)",
+        backgroundColor: "#f8fafc",
+        color: "#0f172a",
       }}
     >
       <Sidebar />

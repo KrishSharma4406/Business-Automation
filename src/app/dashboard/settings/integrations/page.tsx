@@ -1,409 +1,283 @@
 "use client";
 
-import TopBar from "@/src/components/top-bar";
-import ConnectModal from "@/src/components/integrations/connect-modal";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import TopBar from "@/src/components/top-bar";
+import { Icon } from "@/src/components/ui/icon";
 
 type Integration = {
   id: string;
   provider: string;
   name: string;
   status: "CONNECTED" | "DISCONNECTED" | "ERROR";
-  metadata?: Record<string, unknown>;
   hasCredentials: boolean;
-  createdAt?: string;
-  updatedAt?: string;
 };
 
-const providers = [
-  { provider: "WHATSAPP", name: "WhatsApp Cloud API", description: "Send automated messages and lead updates directly to customers", color: "#25d366" },
-  { provider: "GROK", name: "Grok / xAI", description: "Power high-speed AI conversations and lead triage reasoning", color: "#6366f1" },
-  { provider: "GMAIL", name: "Gmail Automation", description: "Send outbound email follow-ups and notifications to prospects", color: "#ea4335" },
-  { provider: "SLACK", name: "Slack Alerts", description: "Post real-time notifications to your internal team channels", color: "#e01e5a" },
-  { provider: "GOOGLE", name: "Google Calendar", description: "Schedule client appointments and sync demo bookings", color: "#4285f4" },
-  { provider: "STRIPE", name: "Stripe Billing", description: "Track invoices, payments, and client subscription statuses", color: "#635bff" },
+const PROVIDERS = [
+  {
+    provider: "WHATSAPP",
+    name: "WhatsApp Cloud API",
+    description: "Receive client inquiries and send automated responses via official Meta API.",
+    icon: "chat",
+  },
+  {
+    provider: "GMAIL",
+    name: "Gmail / SMTP",
+    description: "Send automated transactional emails, scheduling confirmations, and follow-ups.",
+    icon: "mail",
+  },
+  {
+    provider: "SLACK",
+    name: "Slack Webhooks",
+    description: "Dispatch instant notifications and high-priority lead alerts to internal channels.",
+    icon: "award",
+  },
+  {
+    provider: "STRIPE",
+    name: "Stripe Billing",
+    description: "Monitor customer subscription invoices and automatic contract activations.",
+    icon: "vote",
+  },
+  {
+    provider: "GOOGLE",
+    name: "Google Calendar",
+    description: "Synchronize consultation bookings and prevent double-booking across team calendars.",
+    icon: "calendar",
+  },
 ];
 
 export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [connectProvider, setConnectProvider] = useState<(typeof providers)[number] | null>(null);
-  const [editIntegration, setEditIntegration] = useState<Integration | null>(null);
-  const [successMessage, setSuccessMessage] = useState("");
-
-  async function loadIntegrations() {
-    try {
-      setLoading(true);
-      setError("");
-      const response = await fetch("/api/integrations");
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to load integrations");
-      setIntegrations(data.integrations || []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load integrations");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [selectedProvider, setSelectedProvider] = useState<(typeof PROVIDERS)[number] | null>(null);
+  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadIntegrations();
+    fetch("/api/integrations")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.integrations) setIntegrations(data.integrations);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  function showSuccess(msg: string) {
-    setSuccessMessage(msg);
-    setTimeout(() => setSuccessMessage(""), 3500);
-  }
+  const handleConnect = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProvider) return;
 
-  function getIntegration(provider: string) {
-    return integrations.find((i) => i.provider === provider);
-  }
-
-  async function handleDisconnect(integration: Integration) {
-    const confirmed = window.confirm(
-      `Disconnect ${integration.name}? The service will be disabled until you reconnect.`
-    );
-    if (!confirmed) return;
+    setSaving(true);
     try {
-      setActionLoading(integration.id);
-      const response = await fetch(`/api/integrations/${integration.id}`, {
-        method: "PATCH",
+      const res = await fetch("/api/integrations", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "DISCONNECTED" }),
+        body: JSON.stringify({
+          provider: selectedProvider.provider,
+          name: selectedProvider.name,
+          credentials: { apiKey: apiKeyInput.trim() },
+        }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to disconnect");
-      showSuccess(`${integration.name} disconnected`);
-      await loadIntegrations();
-    } catch (err: any) {
-      alert(err.message || "Failed to disconnect");
+
+      if (res.ok) {
+        setSelectedProvider(null);
+        setApiKeyInput("");
+        const refreshed = await fetch("/api/integrations").then((r) => r.json());
+        if (refreshed?.integrations) setIntegrations(refreshed.integrations);
+      }
+    } catch (err) {
+      console.error(err);
     } finally {
-      setActionLoading(null);
+      setSaving(false);
     }
-  }
-
-  async function handleReconnect(integration: Integration) {
-    setEditIntegration(integration);
-    const providerInfo = providers.find((p) => p.provider === integration.provider);
-    if (providerInfo) setConnectProvider(providerInfo);
-  }
-
-  async function handleDelete(integration: Integration) {
-    const confirmed = window.confirm(
-      `Remove ${integration.name} integration and delete saved credentials? This cannot be undone.`
-    );
-    if (!confirmed) return;
-    try {
-      setActionLoading(integration.id);
-      const response = await fetch(`/api/integrations/${integration.id}`, { method: "DELETE" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to delete");
-      showSuccess(`${integration.name} removed`);
-      await loadIntegrations();
-    } catch (err: any) {
-      alert(err.message || "Failed to delete");
-    } finally {
-      setActionLoading(null);
-    }
-  }
-
-  function formatDate(dateStr?: string) {
-    if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }
-
-  const connectedCount = integrations.filter((i) => i.status === "CONNECTED").length;
+  };
 
   return (
-    <div className="az-dash-page">
+    <div
+      style={{
+        flex: 1,
+        backgroundColor: "#f8fafc",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <TopBar
-        title="App Integrations"
-        subtitle="Connect external services to automate messaging, AI, and workflow triggers"
+        title="Integration Gateways"
+        subtitle="Manage secure API credentials and connected omnichannel notification channels."
       />
 
-      <div className="az-dash-body">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-          <Link
-            href="/dashboard/settings"
-            className="az-btn-secondary"
-            style={{ fontSize: "11px", padding: "6px 12px", textDecoration: "none" }}
-          >
-            ← Back to Settings
-          </Link>
-          <span style={{ fontSize: "12px", color: "var(--az-text-muted)", fontFamily: "var(--az-font-mono)" }}>
-            STATUS: <strong style={{ color: "#ffffff" }}>{connectedCount}</strong> OF {providers.length} CONNECTED
-          </span>
-        </div>
+      <div style={{ padding: "32px 36px 60px", maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: "20px",
+          }}
+        >
+          {PROVIDERS.map((p) => {
+            const connected = integrations.some(
+              (i) => i.provider === p.provider && i.status === "CONNECTED"
+            );
 
-        <div className="az-dash-stats">
-          <div className="az-dash-stat">
-            <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">Available Apps</span>
-              <span className="az-tag az-tag-blue">Catalog</span>
-            </div>
-            <div className="az-dash-stat-val">{providers.length}</div>
-            <div className="az-dash-stat-delta" style={{ color: "var(--az-text-muted)" }}>Supported platforms</div>
-          </div>
-
-          <div className="az-dash-stat">
-            <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">Connected</span>
-              <span className="az-tag az-tag-emerald">Active</span>
-            </div>
-            <div className="az-dash-stat-val" style={{ color: connectedCount > 0 ? "var(--az-emerald)" : "#ffffff" }}>
-              {connectedCount}
-            </div>
-            <div className="az-dash-stat-delta">
-              <span className="az-status-dot" /> Live &amp; transmitting
-            </div>
-          </div>
-
-          <div className="az-dash-stat">
-            <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">Security &amp; Encryption</span>
-              <span className="az-tag az-tag-emerald">AES-256</span>
-            </div>
-            <div className="az-dash-stat-val" style={{ fontSize: "20px" }}>Protected</div>
-            <div className="az-dash-stat-delta">All tokens encrypted in storage</div>
-          </div>
-        </div>
-
-        {successMessage && (
-          <div
-            style={{
-              padding: "10px 16px",
-              borderRadius: "4px",
-              background: "rgba(16, 185, 129, 0.12)",
-              border: "1px solid rgba(16, 185, 129, 0.3)",
-              color: "var(--az-emerald)",
-              fontSize: "12px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <span className="az-status-dot" />
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {error && (
-          <div
-            style={{
-              padding: "10px 16px",
-              borderRadius: "4px",
-              background: "rgba(239, 68, 68, 0.12)",
-              border: "1px solid rgba(239, 68, 68, 0.3)",
-              color: "var(--az-red)",
-              fontSize: "12px",
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
-              gap: "16px",
-            }}
-          >
-            {Array.from({ length: 6 }).map((_, i) => (
+            return (
               <div
-                key={i}
-                className="az-dash-card"
-                style={{ height: "200px", opacity: 0.5, animation: "pulse 1.5s infinite" }}
-              />
-            ))}
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
-              gap: "16px",
-            }}
-          >
-            {providers.map((provider) => {
-              const integration = getIntegration(provider.provider);
-              const isConnected = integration?.status === "CONNECTED";
-              const isDisconnected = integration?.status === "DISCONNECTED";
-              const isError = integration?.status === "ERROR";
-              const isLoading = actionLoading === integration?.id;
-
-              return (
-                <div
-                  key={provider.provider}
-                  className="az-dash-card"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    borderColor: isConnected
-                      ? "rgba(16, 185, 129, 0.3)"
-                      : isError
-                      ? "rgba(239, 68, 68, 0.3)"
-                      : "var(--az-border)",
-                  }}
-                >
-                  <div className="az-dash-card-header">
-                    <div className="az-dash-card-title">
-                      <span
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: isConnected ? "var(--az-emerald)" : isDisconnected ? "var(--az-amber)" : "#5a6578",
-                          boxShadow: isConnected ? "0 0 8px rgba(16, 185, 129, 0.5)" : "none",
-                        }}
-                      />
-                      <span>{provider.name}</span>
+                key={p.provider}
+                style={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+                }}
+              >
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "8px",
+                        backgroundColor: connected ? "#f0fdf4" : "#f1f5f9",
+                        color: connected ? "#16a34a" : "#64748b",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Icon name={p.icon} size={18} />
                     </div>
 
                     <span
-                      className={`az-tag ${
-                        isConnected
-                          ? "az-tag-emerald"
-                          : isError
-                          ? "az-tag-red"
-                          : isDisconnected
-                          ? "az-tag-amber"
-                          : "az-tag-blue"
-                      }`}
-                      style={{ fontSize: "10px" }}
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        padding: "3px 8px",
+                        borderRadius: "12px",
+                        backgroundColor: connected ? "#f0fdf4" : "#f8fafc",
+                        color: connected ? "#16a34a" : "#94a3b8",
+                        border: `1px solid ${connected ? "#bbf7d0" : "#e2e8f0"}`,
+                      }}
                     >
-                      {isConnected
-                        ? "Connected"
-                        : isError
-                        ? "Attention"
-                        : isDisconnected
-                        ? "Paused"
-                        : "Ready to Add"}
+                      {connected ? "Connected" : "Not Linked"}
                     </span>
                   </div>
 
-                  <div className="az-dash-card-body" style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "16px" }}>
-                    <div>
-                      <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", lineHeight: 1.45, marginBottom: "14px" }}>
-                        {provider.description}
-                      </p>
-
-                      {integration && (
-                        <div
-                          style={{
-                            padding: "8px 12px",
-                            borderRadius: "4px",
-                            background: "rgba(22, 26, 32, 0.6)",
-                            border: "1px solid var(--az-border)",
-                            fontSize: "11px",
-                            fontFamily: "var(--az-font-mono)",
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <span style={{ color: "var(--az-text-muted)" }}>STATUS</span>
-                          <span style={{ color: integration.hasCredentials ? "var(--az-emerald)" : "var(--az-red)" }}>
-                            {integration.hasCredentials ? "Credentials Active" : "Missing Key"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div style={{ display: "flex", gap: "8px", paddingTop: "12px", borderTop: "1px solid var(--az-border)" }}>
-                      {isConnected ? (
-                        <>
-                          <button
-                            onClick={() => handleDisconnect(integration!)}
-                            disabled={isLoading}
-                            className="az-btn-secondary"
-                            style={{ flex: 1, fontSize: "11px", padding: "6px 10px" }}
-                          >
-                            {isLoading ? "..." : "Pause"}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(integration!)}
-                            disabled={isLoading}
-                            className="az-btn-secondary"
-                            style={{
-                              fontSize: "11px",
-                              padding: "6px 10px",
-                              color: "var(--az-red)",
-                              borderColor: "rgba(239, 68, 68, 0.3)",
-                            }}
-                          >
-                            Remove
-                          </button>
-                        </>
-                      ) : isDisconnected || isError ? (
-                        <>
-                          <button
-                            onClick={() => handleReconnect(integration!)}
-                            disabled={isLoading}
-                            className="az-btn-primary"
-                            style={{ flex: 1, fontSize: "11px", padding: "6px 10px" }}
-                          >
-                            {isLoading ? "..." : "Reconnect"}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(integration!)}
-                            disabled={isLoading}
-                            className="az-btn-secondary"
-                            style={{
-                              fontSize: "11px",
-                              padding: "6px 10px",
-                              color: "var(--az-red)",
-                              borderColor: "rgba(239, 68, 68, 0.3)",
-                            }}
-                          >
-                            Remove
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditIntegration(null);
-                            setConnectProvider(provider);
-                          }}
-                          className="az-btn-primary"
-                          style={{ width: "100%", fontSize: "11px", padding: "7px 12px" }}
-                        >
-                          + Connect Service
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  <h3
+                    style={{
+                      margin: "16px 0 4px",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "#0f172a",
+                    }}
+                  >
+                    {p.name}
+                  </h3>
+                  <p style={{ fontSize: "13px", color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+                    {p.description}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
-        )}
+
+                <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid #f1f5f9" }}>
+                  <button
+                    onClick={() => setSelectedProvider(p)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 14px",
+                      fontSize: "13px",
+                      fontWeight: 500,
+                      backgroundColor: connected ? "#f8fafc" : "#0284c7",
+                      color: connected ? "#334155" : "#ffffff",
+                      border: connected ? "1px solid #cbd5e1" : "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {connected ? "Configure Keys" : "Connect Provider"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {connectProvider && (
-        <ConnectModal
-          provider={connectProvider}
-          integration={editIntegration ?? undefined}
-          onClose={() => {
-            setConnectProvider(null);
-            setEditIntegration(null);
+      {/* Connect Modal */}
+      {selectedProvider && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.5)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
           }}
-          onSuccess={() => {
-            setConnectProvider(null);
-            setEditIntegration(null);
-            showSuccess(
-              `${connectProvider.name} ${editIntegration ? "updated" : "connected"} successfully`
-            );
-            loadIntegrations();
-          }}
-        />
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "12px",
+              padding: "26px 30px",
+              width: "100%",
+              maxWidth: "440px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 600, color: "#0f172a" }}>
+                Connect {selectedProvider.name}
+              </h3>
+              <button
+                onClick={() => setSelectedProvider(null)}
+                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "20px" }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleConnect}>
+              <div style={{ marginBottom: "18px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "6px" }}>
+                  API Token / Secret Key
+                </label>
+                <input
+                  type="password"
+                  placeholder="Paste authorization credentials..."
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  required
+                  style={{ width: "100%", padding: "9px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px", boxSizing: "border-box" }}
+                />
+                <span style={{ display: "block", fontSize: "11px", color: "#94a3b8", marginTop: "4px" }}>
+                  Encrypted with AES-256 in your isolated database record.
+                </span>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedProvider(null)}
+                  style={{ padding: "8px 14px", fontSize: "13px", fontWeight: 500, color: "#64748b", backgroundColor: "#f1f5f9", border: "none", borderRadius: "6px", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={{ padding: "8px 18px", fontSize: "13px", fontWeight: 600, color: "#ffffff", backgroundColor: "#0284c7", border: "none", borderRadius: "6px", cursor: "pointer" }}
+                >
+                  {saving ? "Saving..." : "Save Connection"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -2,17 +2,24 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Ticker from "./ticker";
+import { Icon } from "@/src/components/ui/icon";
 
-export default function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
-  const [search, setSearch] = useState("");
+export default function TopBar({
+  title,
+  subtitle,
+  actions,
+}: {
+  title: string;
+  subtitle?: string;
+  actions?: React.ReactNode;
+}) {
   const [timeStr, setTimeStr] = useState("");
 
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setTimeStr(
-        `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`
+        `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} UTC`
       );
     };
     updateTime();
@@ -21,87 +28,93 @@ export default function TopBar({ title, subtitle }: { title: string; subtitle?: 
   }, []);
 
   return (
-    <div style={{ position: "sticky", top: 0, zIndex: 40, width: "100%", background: "var(--az-surface)" }}>
-      <div className="az-dash-header" style={{ position: "relative", top: "auto" }}>
-        {/* Left: Breadcrumbs & Node Hierarchy */}
-        <div className="az-dash-header-title">
-          <span className="az-tag az-tag-emerald" style={{ padding: "2px 6px", fontSize: "10px" }}>
-            <span className="az-status-dot" />
-            ACTIVE
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 40,
+        backgroundColor: "#ffffff",
+        borderBottom: "1px solid #e2e8f0",
+        padding: "16px 36px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: "16px",
+      }}
+    >
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: "2px 8px",
+              borderRadius: "12px",
+              backgroundColor: "rgba(56, 189, 248, 0.15)",
+              color: "#0284c7",
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+            }}
+          >
+            Connected Node
           </span>
-        <h1 className="az-dash-header-h1">
+          {timeStr && (
+            <span style={{ fontSize: "11px", color: "#94a3b8", fontWeight: 500 }}>
+              {timeStr}
+            </span>
+          )}
+        </div>
+        <h1
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            color: "#0f172a",
+            letterSpacing: "-0.01em",
+            margin: "4px 0 0",
+          }}
+        >
           {title}
         </h1>
         {subtitle && (
-          <span className="az-dash-header-sub">
+          <p style={{ fontSize: "13px", color: "#64748b", margin: "2px 0 0" }}>
             {subtitle}
-          </span>
+          </p>
         )}
       </div>
 
-      {/* Right: Telemetry & Search */}
-      <div className="az-dash-header-actions">
-        {timeStr && (
-          <div
-            className="az-tag"
-            style={{
-              fontFamily: "var(--az-font-mono)",
-              fontSize: "11px",
-              color: "var(--az-text-secondary)",
-              letterSpacing: "0.05em",
-            }}
-          >
-            UTC {timeStr}
-          </div>
-        )}
-
-        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-          <span
-            style={{
-              position: "absolute",
-              left: "10px",
-              color: "var(--az-emerald)",
-              fontFamily: "var(--az-font-mono)",
-              fontSize: "12px",
-              pointerEvents: "none",
-            }}
-          >
-            &gt;
-          </span>
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="az-input-search"
-            style={{
-              paddingLeft: "26px",
-              width: "220px",
-              height: "32px",
-            }}
-          />
-        </div>
-
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        {actions}
         <Link
           href="/"
           target="_blank"
-          className="az-btn-secondary"
           style={{
-            fontSize: "11px",
-            padding: "6px 12px",
-            height: "32px",
             display: "inline-flex",
             alignItems: "center",
             gap: "6px",
+            fontSize: "12px",
+            fontWeight: 500,
+            color: "#64748b",
+            backgroundColor: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            padding: "6px 12px",
+            borderRadius: "6px",
             textDecoration: "none",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#0f172a";
+            e.currentTarget.style.borderColor = "#cbd5e1";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "#64748b";
+            e.currentTarget.style.borderColor = "#e2e8f0";
           }}
         >
-          <span>Visit Website</span>
-          <span style={{ color: "var(--az-emerald)" }}>↗</span>
+          <span>Live Site</span>
+          <Icon name="external-link" size={12} />
         </Link>
       </div>
-    </div>
-    <Ticker className="az-dash-ticker" />
-  </div>
+    </header>
   );
 }

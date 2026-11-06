@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import "@/src/app/landing.css";
+import { Icon } from "@/src/components/ui/icon";
 
 function GoogleIcon() {
   return (
@@ -49,100 +49,190 @@ function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Invalid email or password.");
+      setError("Invalid email address or password.");
       return;
     }
 
     const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-    router.push(callbackUrl);
-    router.refresh();
+    router.replace(callbackUrl);
   }
 
-  async function handleGoogleSignIn() {
-    setError("");
+  async function handleGoogleLogin() {
     setGoogleLoading(true);
-    try {
-      const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-      await signIn("google", { callbackUrl });
-    } catch {
-      setError("Google sign-in failed. Please try again.");
-      setGoogleLoading(false);
-    }
+    await signIn("google", {
+      callbackUrl: searchParams.get("callbackUrl") || "/dashboard",
+    });
   }
 
   return (
-    <div className="az-auth-card">
-      <div className="az-auth-head">
-        <h1 className="az-auth-title">Sign in</h1>
-        <p className="az-auth-desc">Welcome back. Enter your account details.</p>
-      </div>
-
-      {error && (
-        <div className="az-auth-error">
-          {error}
-        </div>
-      )}
-
-      {/* Google Sign In */}
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        disabled={googleLoading || loading}
-        className="az-google-btn"
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#081b2d",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+        fontFamily: "var(--font-sans, system-ui, -apple-system, sans-serif)",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "400px",
+          backgroundColor: "#ffffff",
+          borderRadius: "14px",
+          padding: "36px 32px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.45)",
+        }}
       >
-        <GoogleIcon />
-        {googleLoading ? "Signing in..." : "Continue with Google"}
-      </button>
-
-      <div className="az-auth-divider">
-        <span>or</span>
-      </div>
-
-      <form onSubmit={handleSubmit} className="az-auth-form">
-        <div className="az-field">
-          <label htmlFor="email" className="az-field-label">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-            className="az-field-input"
-          />
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
+          <div
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "8px",
+              border: "2px solid #0284c7",
+              backgroundColor: "rgba(2, 132, 199, 0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 12px",
+            }}
+          >
+            <div style={{ width: "10px", height: "10px", backgroundColor: "#0284c7", borderRadius: "2px" }} />
+          </div>
+          <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>
+            Sign in to Autozip
+          </h1>
+          <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+            Access your operations pipeline and automated workflows.
+          </p>
         </div>
 
-        <div className="az-field">
-          <label htmlFor="password" className="az-field-label">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            className="az-field-input"
-          />
-        </div>
+        {error && (
+          <div
+            style={{
+              padding: "10px 14px",
+              borderRadius: "6px",
+              backgroundColor: "#fef2f2",
+              border: "1px solid #fecaca",
+              color: "#dc2626",
+              fontSize: "13px",
+              marginBottom: "18px",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <button
-          type="submit"
-          disabled={loading || googleLoading}
-          className="az-auth-submit-btn"
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={googleLoading}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            padding: "10px 16px",
+            border: "1px solid #cbd5e1",
+            borderRadius: "8px",
+            backgroundColor: "#ffffff",
+            color: "#334155",
+            fontSize: "13.5px",
+            fontWeight: 600,
+            cursor: "pointer",
+            marginBottom: "20px",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ffffff")}
         >
-          {loading ? "Signing in..." : "Sign in"}
+          <GoogleIcon />
+          <span>{googleLoading ? "Signing in..." : "Continue with Google"}</span>
         </button>
-      </form>
 
-      <div className="az-auth-footer">
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+          <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }} />
+          <span style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>
+            Or with email
+          </span>
+          <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }} />
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "14px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "6px" }}>
+              Work Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="operator@company.com"
+              required
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "6px",
+                fontSize: "13.5px",
+                boxSizing: "border-box",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "6px" }}>
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "6px",
+                fontSize: "13.5px",
+                boxSizing: "border-box",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "10px 16px",
+              borderRadius: "8px",
+              backgroundColor: "#0284c7",
+              color: "#ffffff",
+              fontSize: "14px",
+              fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
+              transition: "background 0.15s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0369a1")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0284c7")}
+          >
+            {loading ? "Authenticating..." : "Sign In"}
+          </button>
+        </form>
+
+        <div style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#64748b" }}>
           Don&apos;t have an account?{" "}
-          <Link href="/auth/register">
-            Sign up
+          <Link href="/auth/register" style={{ color: "#0284c7", fontWeight: 600, textDecoration: "none" }}>
+            Create Workspace
           </Link>
         </div>
       </div>
@@ -152,23 +242,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="az-auth-page">
-      <nav className="az-auth-navbar">
-        <div className="az-auth-nav-inner">
-          <Link href="/" className="az-brand">
-            <span className="az-brand-name">AUTOZIP</span>
-          </Link>
-          <Link href="/" className="az-btn-secondary" style={{ fontSize: "12px", padding: "6px 14px" }}>
-            Back
-          </Link>
-        </div>
-      </nav>
-
-      <main className="az-auth-main">
-        <Suspense fallback={<div className="az-mono" style={{ color: "var(--az-text-muted)" }}>Loading...</div>}>
-          <LoginForm />
-        </Suspense>
-      </main>
-    </div>
+    <Suspense fallback={<div style={{ minHeight: "100vh", backgroundColor: "#081b2d" }} />}>
+      <LoginForm />
+    </Suspense>
   );
 }

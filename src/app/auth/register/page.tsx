@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
-import "@/src/app/landing.css";
+import { Icon } from "@/src/components/ui/icon";
 
 function GoogleIcon() {
   return (
@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
     const formData = new FormData(event.currentTarget);
     const email = (formData.get("email") as string)?.trim();
-    const phone = (formData.get("phone") as string)?.trim();
+    const name = (formData.get("name") as string)?.trim();
     const password = formData.get("password") as string;
     const confirm = formData.get("confirm") as string;
 
@@ -48,24 +48,17 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await fetch("/api/auth/register", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.get("name"),
-          email,
-          phone,
-          password,
-        }),
+        body: JSON.stringify({ email, name, password }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Registration failed.");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create account");
       }
 
-      // Automatically authenticate session and go directly to main dashboard
       const signInResult = await signIn("credentials", {
         email,
         password,
@@ -73,160 +66,234 @@ export default function RegisterPage() {
       });
 
       if (signInResult?.error) {
-        router.push("/auth/login");
-        return;
+        router.push("/auth/login?registered=1");
+      } else {
+        router.push("/dashboard");
       }
-
-      router.push("/dashboard");
-      router.refresh();
     } catch (err: any) {
-      setError(err.message || "Sign up failed. Please try again.");
+      setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleGoogleSignUp() {
-    setError("");
+  async function handleGoogleLogin() {
     setGoogleLoading(true);
-    try {
-      await signIn("google", { callbackUrl: "/dashboard" });
-    } catch {
-      setError("Google sign-in failed. Please try again.");
-      setGoogleLoading(false);
-    }
+    await signIn("google", { callbackUrl: "/dashboard" });
   }
 
   return (
-    <div className="az-auth-page">
-      <nav className="az-auth-navbar">
-        <div className="az-auth-nav-inner">
-          <Link href="/" className="az-brand">
-            <span className="az-brand-name">AUTOZIP</span>
-          </Link>
-          <Link href="/" className="az-btn-secondary" style={{ fontSize: "12px", padding: "6px 14px" }}>
-            Back
-          </Link>
-        </div>
-      </nav>
-
-      <main className="az-auth-main">
-        <div className="az-auth-card">
-          <div className="az-auth-head">
-            <h1 className="az-auth-title">Sign up</h1>
-            <p className="az-auth-desc">Create your account to get started.</p>
-          </div>
-
-          {error && (
-            <div className="az-auth-error">
-              {error}
-            </div>
-          )}
-
-          {/* Google Sign In */}
-          <button
-            type="button"
-            onClick={handleGoogleSignUp}
-            disabled={googleLoading || loading}
-            className="az-google-btn"
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#081b2d",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+        fontFamily: "var(--font-sans, system-ui, -apple-system, sans-serif)",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "440px",
+          backgroundColor: "#ffffff",
+          borderRadius: "14px",
+          padding: "36px 32px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.45)",
+        }}
+      >
+        <div style={{ textAlign: "center", marginBottom: "26px" }}>
+          <div
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "8px",
+              border: "2px solid #0284c7",
+              backgroundColor: "rgba(2, 132, 199, 0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 12px",
+            }}
           >
-            <GoogleIcon />
-            {googleLoading ? "Signing in..." : "Continue with Google"}
-          </button>
-
-          <div className="az-auth-divider">
-            <span>or</span>
+            <div style={{ width: "10px", height: "10px", backgroundColor: "#0284c7", borderRadius: "2px" }} />
           </div>
-
-          <form onSubmit={handleSubmit} className="az-auth-form">
-            <div className="az-field">
-              <label htmlFor="name" className="az-field-label">
-                Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Your name"
-                required
-                className="az-field-input"
-              />
-            </div>
-
-            <div className="az-field">
-              <label htmlFor="email" className="az-field-label">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                required
-                className="az-field-input"
-              />
-            </div>
-
-            <div className="az-field">
-              <label htmlFor="phone" className="az-field-label">
-                Phone (optional)
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="+1 234 567 8900"
-                className="az-field-input"
-              />
-            </div>
-
-            <div className="az-field">
-              <label htmlFor="password" className="az-field-label">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="At least 8 characters"
-                required
-                className="az-field-input"
-              />
-            </div>
-
-            <div className="az-field">
-              <label htmlFor="confirm" className="az-field-label">
-                Confirm password
-              </label>
-              <input
-                id="confirm"
-                name="confirm"
-                type="password"
-                placeholder="Repeat password"
-                required
-                className="az-field-input"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || googleLoading}
-              className="az-auth-submit-btn"
-            >
-              {loading ? "Creating account..." : "Sign up"}
-            </button>
-          </form>
-
-          <div className="az-auth-footer">
-            <div>
-              Already have an account?{" "}
-              <Link href="/auth/login">
-                Sign in
-              </Link>
-            </div>
-          </div>
+          <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>
+            Create Autozip Workspace
+          </h1>
+          <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+            Provision an isolated operations node and automated pipeline.
+          </p>
         </div>
-      </main>
+
+        {error && (
+          <div
+            style={{
+              padding: "10px 14px",
+              borderRadius: "6px",
+              backgroundColor: "#fef2f2",
+              border: "1px solid #fecaca",
+              color: "#dc2626",
+              fontSize: "13px",
+              marginBottom: "18px",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={googleLoading}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            padding: "10px 16px",
+            border: "1px solid #cbd5e1",
+            borderRadius: "8px",
+            backgroundColor: "#ffffff",
+            color: "#334155",
+            fontSize: "13.5px",
+            fontWeight: 600,
+            cursor: "pointer",
+            marginBottom: "18px",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ffffff")}
+        >
+          <GoogleIcon />
+          <span>{googleLoading ? "Connecting..." : "Sign up with Google"}</span>
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "18px" }}>
+          <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }} />
+          <span style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>
+            Or with email
+          </span>
+          <div style={{ flex: 1, height: "1px", backgroundColor: "#e2e8f0" }} />
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "12px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+              Full Name
+            </label>
+            <input
+              name="name"
+              type="text"
+              placeholder="e.g. Elena Vance"
+              required
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "6px",
+                fontSize: "13.5px",
+                boxSizing: "border-box",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+              Work Email
+            </label>
+            <input
+              name="email"
+              type="email"
+              placeholder="operator@company.com"
+              required
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "6px",
+                fontSize: "13.5px",
+                boxSizing: "border-box",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+              Password
+            </label>
+            <input
+              name="password"
+              type="password"
+              placeholder="Min 8 characters"
+              required
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "6px",
+                fontSize: "13.5px",
+                boxSizing: "border-box",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+              Confirm Password
+            </label>
+            <input
+              name="confirm"
+              type="password"
+              placeholder="Re-type password"
+              required
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "6px",
+                fontSize: "13.5px",
+                boxSizing: "border-box",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "10px 16px",
+              borderRadius: "8px",
+              backgroundColor: "#0284c7",
+              color: "#ffffff",
+              fontSize: "14px",
+              fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
+              transition: "background 0.15s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0369a1")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0284c7")}
+          >
+            {loading ? "Provisioning..." : "Create Workspace"}
+          </button>
+        </form>
+
+        <div style={{ textAlign: "center", marginTop: "24px", fontSize: "13px", color: "#64748b" }}>
+          Already have an account?{" "}
+          <Link href="/auth/login" style={{ color: "#0284c7", fontWeight: 600, textDecoration: "none" }}>
+            Sign In
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,541 +1,438 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import TopBar from "@/src/components/top-bar";
-import CreateAutomationForm from "@/src/components/automations/create-automation-form";
-import ExecutionHistory from "@/src/components/automations/execution-history";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Icon } from "@/src/components/ui/icon";
 
 type Automation = {
   id: string;
-  businessId: string;
   name: string;
   trigger: string;
   action: string;
-  config: Record<string, unknown> | null;
   enabled: boolean;
-  description: string | null;
+  description?: string | null;
   createdAt: string;
-  updatedAt: string;
 };
 
-type AutomationStats = {
-  total: number;
-  active: number;
-  paused: number;
-  executions: number;
+const TRIGGER_LABELS: Record<string, string> = {
+  new_lead: "When a new lead arrives",
+  new_customer: "When a new customer is added",
+  lead_qualified: "When a lead is qualified with high score",
+  stalled_deal: "When a lead is dormant for 48 hours",
 };
 
-const TRIGGER_META: Record<string, { label: string; tag: string }> = {
-  new_lead: { label: "When a new lead arrives", tag: "TRIGGER: NEW_LEAD" },
-  new_customer: { label: "When a new customer is created", tag: "TRIGGER: NEW_CUSTOMER" },
-  new_message: { label: "When a new message arrives", tag: "TRIGGER: INBOUND_MSG" },
-  lead_qualified: { label: "When a lead is qualified", tag: "TRIGGER: LEAD_QUALIFIED" },
-  conversation_received: { label: "When a conversation is received", tag: "TRIGGER: CONV_INGRESS" },
-};
-
-const ACTION_META: Record<string, { label: string; tag: string }> = {
-  ai_qualify_lead: { label: "Qualify lead with AI", tag: "ACTION: AI_QUALIFY" },
-  generate_response: { label: "Generate AI response", tag: "ACTION: AI_SYNTHESIZE" },
-  send_email: { label: "Send email", tag: "ACTION: SMTP_DISPATCH" },
-  send_whatsapp: { label: "Send WhatsApp message", tag: "ACTION: WHATSAPP_API" },
-  notify_owner: { label: "Notify business owner", tag: "ACTION: NOTIFY_OPERATOR" },
-  create_task: { label: "Create a task", tag: "ACTION: NEON_CRM_TASK" },
+const ACTION_LABELS: Record<string, string> = {
+  ai_qualify_lead: "Qualify lead with AI model",
+  send_email: "Send transactional email via Resend",
+  send_whatsapp: "Dispatch message via WhatsApp Cloud API",
+  notify_owner: "Send alert to workspace owner",
+  create_task: "Log follow-up task to CRM",
 };
 
 export default function AutomationPage() {
   const [automations, setAutomations] = useState<Automation[]>([]);
-  const [stats, setStats] = useState<AutomationStats>({
-    total: 0,
-    active: 0,
-    paused: 0,
-    executions: 0,
-  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [triggerFilter, setTriggerFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [testingId, setTestingId] = useState<string | null>(null);
-  const [testFeedback, setTestFeedback] = useState<{
-    id: string;
-    success: boolean;
-    message: string;
-  } | null>(null);
 
-  const loadAutomations = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch("/api/automations");
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to load automations");
-      }
-
-      const list: Automation[] = data.automations || [];
-      setAutomations(list);
-      setStats(
-        data.stats || {
-          total: list.length,
-          active: list.filter((a) => a.enabled).length,
-          paused: list.filter((a) => !a.enabled).length,
-          executions: 0,
-        }
-      );
-    } catch (err) {
-      console.error("Failed to load automations:", err);
-      setError(err instanceof Error ? err.message : "Failed to load automations");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // New Automation Modal
+  const [showModal, setShowModal] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [trigger, setTrigger] = useState("new_lead");
+  const [action, setAction] = useState("ai_qualify_lead");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadAutomations();
-  }, [loadAutomations, refreshKey]);
+  }, []);
 
-  async function toggleAutomation(automation: Automation) {
-    setUpdatingId(automation.id);
+  async function loadAutomations() {
     try {
-      const response = await fetch(`/api/automations/${automation.id}`, {
+      setLoading(true);
+      const res = await fetch("/api/automations");
+      if (res.ok) {
+        const data = await res.json();
+        setAutomations(data.automations || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleToggle(id: string, currentState: boolean) {
+    try {
+      const res = await fetch(`/api/automations/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !automation.enabled }),
+        body: JSON.stringify({ enabled: !currentState }),
       });
-
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || "Failed to update automation.");
+      if (res.ok) {
+        setAutomations((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, enabled: !currentState } : a))
+        );
       }
-
-      setRefreshKey((k) => k + 1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update automation.");
-    } finally {
-      setUpdatingId(null);
+      console.error(err);
     }
   }
 
-  async function deleteAutomation(automation: Automation) {
-    if (!window.confirm(`Delete automation "${automation.name}"?`)) return;
+  async function handleCreateAutomation(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
 
-    setDeletingId(automation.id);
+    setSubmitting(true);
     try {
-      const response = await fetch(`/api/automations/${automation.id}`, { method: "DELETE" });
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || "Failed to delete automation.");
-      }
-
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete automation.");
-    } finally {
-      setDeletingId(null);
-    }
-  }
-
-  async function testAutomation(automation: Automation) {
-    if (testingId || updatingId || deletingId) return;
-
-    setTestingId(automation.id);
-    setTestFeedback(null);
-
-    try {
-      const response = await fetch(`/api/automations/${automation.id}/test`, {
+      const res = await fetch("/api/automations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          data: {
-            name: "Test Lead",
-            email: "test@example.com",
-            source: "manual_test",
-          },
+          name: name.trim(),
+          description: description.trim() || undefined,
+          trigger,
+          action,
+          enabled: true,
         }),
       });
 
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(
-          result.error ||
-            result.execution?.error ||
-            result.execution?.result?.message ||
-            "Automation test failed."
-        );
+      if (res.ok) {
+        setName("");
+        setDescription("");
+        setShowModal(false);
+        loadAutomations();
       }
-
-      setTestFeedback({
-        id: automation.id,
-        success: true,
-        message: `Execution completed in ${result.execution?.durationMs ?? 0} ms.`,
-      });
     } catch (err) {
-      setTestFeedback({
-        id: automation.id,
-        success: false,
-        message: err instanceof Error ? err.message : "Automation test failed.",
-      });
+      console.error(err);
     } finally {
-      setTestingId(null);
+      setSubmitting(false);
     }
   }
 
-  const filteredAutomations = useMemo(() => {
-    return automations.filter((item) => {
-      if (statusFilter === "active" && !item.enabled) return false;
-      if (statusFilter === "paused" && item.enabled) return false;
-      if (triggerFilter !== "all" && item.trigger !== triggerFilter) return false;
-      if (!searchQuery.trim()) return true;
-
-      const q = searchQuery.toLowerCase();
-      return (
-        item.name.toLowerCase().includes(q) ||
-        (item.description && item.description.toLowerCase().includes(q)) ||
-        item.trigger.toLowerCase().includes(q) ||
-        item.action.toLowerCase().includes(q)
-      );
-    });
-  }, [automations, statusFilter, triggerFilter, searchQuery]);
-
   return (
-    <div className="az-dash-page">
-      <TopBar title="Automations" subtitle="Set up automated triggers and AI actions for your business" />
-
-      <div className="az-dash-body">
-        {/* Statistics Telemetry */}
-        <div className="az-dash-stats">
-          <div className="az-dash-stat">
-            <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">TOTAL AUTOMATIONS</span>
-              <span className="az-tag" style={{ fontSize: "9px" }}>ALL RULES</span>
-            </div>
-            <div className="az-dash-stat-val">{stats.total}</div>
-            <div className="az-dash-stat-delta">
-              <span>●</span>
-              <span>Configured workflows</span>
-            </div>
-          </div>
-
-          <div className="az-dash-stat">
-            <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">ACTIVE RULES</span>
-              <span className="az-tag az-tag-emerald" style={{ fontSize: "9px" }}>RUNNING</span>
-            </div>
-            <div className="az-dash-stat-val" style={{ color: "var(--az-emerald)" }}>{stats.active}</div>
-            <div className="az-dash-stat-delta">
-              <span>●</span>
-              <span>Listening for events</span>
-            </div>
-          </div>
-
-          <div className="az-dash-stat">
-            <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">PAUSED RULES</span>
-              <span className="az-tag" style={{ fontSize: "9px" }}>PAUSED</span>
-            </div>
-            <div className="az-dash-stat-val" style={{ color: "var(--az-amber)" }}>{stats.paused}</div>
-            <div className="az-dash-stat-delta" style={{ color: "var(--az-text-muted)" }}>
-              <span>○</span>
-              <span>Temporarily stopped</span>
-            </div>
-          </div>
-
-          <div className="az-dash-stat">
-            <div className="az-dash-stat-top">
-              <span className="az-dash-stat-label">TOTAL EXECUTIONS</span>
-              <span className="az-tag az-tag-cyan" style={{ fontSize: "9px" }}>TRIGGERED</span>
-            </div>
-            <div className="az-dash-stat-val" style={{ color: "var(--az-cyan)" }}>{stats.executions}</div>
-            <div className="az-dash-stat-delta" style={{ color: "var(--az-cyan)" }}>
-              <span>↑</span>
-              <span>Actions completed</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Toolbar */}
-        <div className="az-toolbar">
-          <div className="az-toolbar-group">
-            <input
-              type="text"
-              placeholder="Search automations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="az-input-search"
-              style={{ width: "260px" }}
-            />
-
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "11px", color: "var(--az-text-muted)" }}>
-                STATUS:
-              </span>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="az-select-cyber"
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active Only</option>
-                <option value="paused">Paused Only</option>
-              </select>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "11px", color: "var(--az-text-muted)" }}>
-                TRIGGER:
-              </span>
-              <select
-                value={triggerFilter}
-                onChange={(e) => setTriggerFilter(e.target.value)}
-                className="az-select-cyber"
-              >
-                <option value="all">All Triggers</option>
-                {Object.entries(TRIGGER_META).map(([key, item]) => (
-                  <option key={key} value={key}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <span className="az-tag" style={{ fontSize: "11px" }}>
-              {filteredAutomations.length} AUTOMATION{filteredAutomations.length === 1 ? "" : "S"}
-            </span>
-          </div>
-
-          <div className="az-toolbar-group">
-            <button
-              type="button"
-              onClick={() => setShowCreateForm(true)}
-              className="az-btn-primary"
-              style={{ fontSize: "12px", padding: "8px 18px" }}
-            >
-              + New Automation
-            </button>
-          </div>
-        </div>
-
-        {error && (
-          <div className="az-auth-error">
-            [SYSTEM_ERROR] {error}
-          </div>
-        )}
-
-        {/* Automations Grid */}
-        {loading ? (
-          <div style={{ padding: "48px", textAlign: "center" }}>
-            <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "12px", color: "var(--az-text-muted)" }}>
-              Loading automations...
-            </span>
-          </div>
-        ) : filteredAutomations.length === 0 ? (
-          <div className="az-dash-card" style={{ padding: "48px 20px", textAlign: "center" }}>
-            <div style={{ maxWidth: "380px", margin: "0 auto" }}>
-              <span className="az-tag" style={{ marginBottom: "10px", display: "inline-block" }}>
-                NO AUTOMATIONS YET
-              </span>
-              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#ffffff", marginBottom: "6px" }}>
-                No automations created yet
-              </h3>
-              <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", marginBottom: "16px", lineHeight: 1.5 }}>
-                Create automated workflows to score inbound leads, send automatic WhatsApp replies, and notify team members.
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(true)}
-                className="az-btn-primary"
-                style={{ fontSize: "12px", padding: "8px 18px" }}
-              >
-                + Create First Automation
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div
+    <div
+      style={{
+        flex: 1,
+        backgroundColor: "#f8fafc",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <TopBar
+        title="Deterministic Automations"
+        subtitle="Configure event-driven workflows connecting triggers to autonomous actions."
+        actions={
+          <button
+            onClick={() => setShowModal(true)}
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-              gap: "18px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              backgroundColor: "#0284c7",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "6px",
+              padding: "7px 14px",
+              fontSize: "13px",
+              fontWeight: 600,
+              cursor: "pointer",
             }}
           >
-            {filteredAutomations.map((item, idx) => {
-              const triggerInfo = TRIGGER_META[item.trigger] || { label: item.trigger, tag: `TRIGGER: ${item.trigger}` };
-              const actionInfo = ACTION_META[item.action] || { label: item.action, tag: `ACTION: ${item.action}` };
-              const isUpdating = updatingId === item.id;
-              const isDeleting = deletingId === item.id;
-              const isTesting = testingId === item.id;
-              const feedback = testFeedback?.id === item.id ? testFeedback : null;
+            <Icon name="plus" size={14} strokeWidth={2.5} />
+            Create Automation
+          </button>
+        }
+      />
 
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    background: "var(--az-surface)",
-                    border: `1px solid ${item.enabled ? "var(--az-border)" : "var(--az-border-subtle)"}`,
-                    borderRadius: "4px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    padding: "20px",
-                    position: "relative",
-                    overflow: "hidden",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--az-border-bright)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = item.enabled ? "var(--az-border)" : "var(--az-border-subtle)";
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "3px",
-                      height: "100%",
-                      background: item.enabled ? "var(--az-emerald)" : "var(--az-text-muted)",
-                    }}
-                  />
+      <div style={{ padding: "32px 36px 60px", maxWidth: "1280px", width: "100%", margin: "0 auto" }}>
+        {/* Metric Overview Cards */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "20px",
+            marginBottom: "32px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              padding: "20px",
+            }}
+          >
+            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>
+              Total Rules
+            </div>
+            <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a", marginTop: "8px" }}>
+              {automations.length}
+            </div>
+          </div>
 
-                  <div>
-                    {/* Head */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span className="az-tag" style={{ fontSize: "10px" }}>
-                          #{String(idx + 1).padStart(2, "0")}
-                        </span>
-                        <span className={item.enabled ? "az-tag az-tag-emerald" : "az-tag"} style={{ fontSize: "10px" }}>
-                          {item.enabled ? "● ACTIVE" : "○ PAUSED"}
-                        </span>
-                      </div>
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              padding: "20px",
+            }}
+          >
+            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>
+              Active Rules
+            </div>
+            <div style={{ fontSize: "28px", fontWeight: 700, color: "#16a34a", marginTop: "8px" }}>
+              {automations.filter((a) => a.enabled).length}
+            </div>
+          </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <button
-                          type="button"
-                          onClick={() => toggleAutomation(item)}
-                          disabled={isUpdating}
-                          className="az-btn-secondary"
-                          style={{ fontSize: "10px", padding: "3px 8px" }}
-                        >
-                          {isUpdating ? "..." : item.enabled ? "Pause" : "Activate"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteAutomation(item)}
-                          disabled={isDeleting}
-                          className="az-btn-secondary"
-                          style={{ fontSize: "10px", padding: "3px 8px", color: "#f87171", borderColor: "rgba(239, 68, 68, 0.3)" }}
-                        >
-                          {isDeleting ? "..." : "✕"}
-                        </button>
-                      </div>
-                    </div>
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              padding: "20px",
+            }}
+          >
+            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>
+              Paused Rules
+            </div>
+            <div style={{ fontSize: "28px", fontWeight: 700, color: "#d97706", marginTop: "8px" }}>
+              {automations.filter((a) => !a.enabled).length}
+            </div>
+          </div>
+        </div>
 
-                    <h4 style={{ fontFamily: "var(--az-font-mono)", fontSize: "15px", fontWeight: 700, color: "#ffffff", marginBottom: "8px" }}>
-                      {item.name}
-                    </h4>
-
-                    {item.description && (
-                      <p style={{ fontSize: "12px", color: "var(--az-text-secondary)", lineHeight: 1.5, marginBottom: "14px" }}>
-                        {item.description}
-                      </p>
-                    )}
-
-                    {/* Pipeline Flow Visualization */}
-                    <div
+        {/* Automations List */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {automations.length === 0 ? (
+            <div
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "48px 24px",
+                textAlign: "center",
+                color: "#94a3b8",
+              }}
+            >
+              <Icon name="automation" size={32} style={{ color: "#cbd5e1", marginBottom: "8px" }} />
+              <div style={{ fontSize: "14px", fontWeight: 500 }}>No automations active</div>
+              <div style={{ fontSize: "12px", marginTop: "4px" }}>
+                Create your first event-driven workflow rule to automate actions.
+              </div>
+            </div>
+          ) : (
+            automations.map((a) => (
+              <div
+                key={a.id}
+                style={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  padding: "20px 24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "16px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: "260px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "#0f172a" }}>
+                      {a.name}
+                    </h3>
+                    <span
                       style={{
-                        background: "var(--az-surface-alt)",
-                        border: "1px solid var(--az-border)",
-                        borderRadius: "4px",
-                        padding: "10px 12px",
-                        marginBottom: "14px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "6px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        padding: "2px 8px",
+                        borderRadius: "10px",
+                        backgroundColor: a.enabled ? "#f0fdf4" : "#f1f5f9",
+                        color: a.enabled ? "#16a34a" : "#64748b",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "10px", color: "var(--az-text-muted)" }}>
-                          IF:
-                        </span>
-                        <span className="az-tag" style={{ fontSize: "10px", color: "var(--az-text-primary)" }}>
-                          {triggerInfo.tag}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "10px", color: "var(--az-text-muted)" }}>
-                          THEN:
-                        </span>
-                        <span className="az-tag az-tag-emerald" style={{ fontSize: "10px" }}>
-                          {actionInfo.tag}
-                        </span>
-                      </div>
-                    </div>
+                      {a.enabled ? "Active" : "Paused"}
+                    </span>
                   </div>
 
-                  {/* Test Feedback & Action */}
-                  <div style={{ borderTop: "1px solid var(--az-border-subtle)", paddingTop: "12px" }}>
-                    {feedback && (
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          fontFamily: "var(--az-font-mono)",
-                          padding: "6px 8px",
-                          borderRadius: "3px",
-                          marginBottom: "8px",
-                          background: feedback.success ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-                          color: feedback.success ? "var(--az-emerald)" : "#f87171",
-                          border: `1px solid ${feedback.success ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-                        }}
-                      >
-                        {feedback.message}
-                      </div>
-                    )}
+                  {a.description && (
+                    <p style={{ fontSize: "13px", color: "#64748b", margin: "4px 0 0" }}>
+                      {a.description}
+                    </p>
+                  )}
 
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontFamily: "var(--az-font-mono)", fontSize: "10px", color: "var(--az-text-muted)" }}>
-                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString([], { month: "short", day: "numeric" }) : ""}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => testAutomation(item)}
-                        disabled={isTesting}
-                        className="az-btn-secondary"
-                        style={{ fontSize: "11px", padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                      >
-                        <span>{isTesting ? "Testing..." : "Test Run"}</span>
-                        <span style={{ color: "var(--az-emerald)" }}>⚡</span>
-                      </button>
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "10px", flexWrap: "wrap" }}>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        padding: "3px 8px",
+                        borderRadius: "4px",
+                        backgroundColor: "#eff6ff",
+                        color: "#0284c7",
+                      }}
+                    >
+                      Trigger: {TRIGGER_LABELS[a.trigger] || a.trigger}
+                    </span>
+                    <span style={{ fontSize: "11px", color: "#94a3b8" }}>&rarr;</span>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        padding: "3px 8px",
+                        borderRadius: "4px",
+                        backgroundColor: "#fdf4ff",
+                        color: "#c026d3",
+                      }}
+                    >
+                      Action: {ACTION_LABELS[a.action] || a.action}
+                    </span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Execution History Ledger */}
-        <ExecutionHistory />
-
-        {/* Create Automation Form Drawer/Modal */}
-        {showCreateForm && (
-          <CreateAutomationForm
-            onClose={() => setShowCreateForm(false)}
-            onCreated={() => {
-              setRefreshKey((k) => k + 1);
-            }}
-          />
-        )}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <button
+                    onClick={() => handleToggle(a.id, a.enabled)}
+                    style={{
+                      padding: "6px 14px",
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      backgroundColor: a.enabled ? "#fef2f2" : "#f0fdf4",
+                      color: a.enabled ? "#dc2626" : "#16a34a",
+                      border: `1px solid ${a.enabled ? "#fecaca" : "#bbf7d0"}`,
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {a.enabled ? "Pause Rule" : "Activate"}
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
+
+      {/* Create Modal */}
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.5)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "12px",
+              padding: "26px 30px",
+              width: "100%",
+              maxWidth: "460px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 600, color: "#0f172a" }}>
+                Create Automation Rule
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "20px" }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateAutomation}>
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+                  Rule Name *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Instant Lead Qualification"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+                  Description
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Triggers evaluation upon incoming contact form"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "14px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+                  Trigger Event
+                </label>
+                <select
+                  value={trigger}
+                  onChange={(e) => setTrigger(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px", boxSizing: "border-box", backgroundColor: "#ffffff" }}
+                >
+                  <option value="new_lead">When a new lead arrives</option>
+                  <option value="lead_qualified">When a lead is qualified with high score</option>
+                  <option value="new_customer">When a new customer is added</option>
+                  <option value="stalled_deal">When a lead is dormant for 48 hours</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+                  Dispatched Action
+                </label>
+                <select
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #cbd5e1", borderRadius: "6px", fontSize: "13px", boxSizing: "border-box", backgroundColor: "#ffffff" }}
+                >
+                  <option value="ai_qualify_lead">Qualify lead with AI model</option>
+                  <option value="send_email">Send transactional email via Resend</option>
+                  <option value="send_whatsapp">Dispatch message via WhatsApp Cloud API</option>
+                  <option value="notify_owner">Send alert to workspace owner</option>
+                  <option value="create_task">Log follow-up task to CRM</option>
+                </select>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  style={{ padding: "8px 14px", fontSize: "13px", fontWeight: 500, color: "#64748b", backgroundColor: "#f1f5f9", border: "none", borderRadius: "6px", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{ padding: "8px 18px", fontSize: "13px", fontWeight: 600, color: "#ffffff", backgroundColor: "#0284c7", border: "none", borderRadius: "6px", cursor: "pointer" }}
+                >
+                  {submitting ? "Saving..." : "Create Rule"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
